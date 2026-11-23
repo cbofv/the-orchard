@@ -5,6 +5,6 @@
    is enforced by the rules in supabase-setup.sql.
    ============================================================ */
 window.ORCHARD_CONFIG = {
-  supabaseUrl: "PASTE_PROJECT_URL_HERE",
-  supabaseKey: "PASTE_PUBLISHABLE_KEY_HERE"
+  supabaseUrl: "https://jxxbadgsundbrkdfvpwp.supabase.co",
+  supabaseKey: "sb_publishable_04P31SSfUIRKNHRQf7HlIg_NqDyTUmo"
 };
