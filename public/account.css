@@ -1,0 +1,16 @@
+/* Account panel inside Settings — uses the app's own theme tokens */
+#acct .acct-card { display: flex; align-items: center; gap: 14px; padding: 14px 16px; margin-bottom: 12px; border: 1px solid var(--line); border-radius: 18px; background: var(--glass); }
+#acct .acct-avatar { flex: none; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: var(--grad); color: var(--acc-ink); font: 600 1.1rem var(--display); }
+#acct .acct-who { flex: 1; min-width: 0; display: grid; gap: 2px; }
+#acct .acct-who b { font: 600 1rem var(--display); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#acct .acct-who span { color: var(--ink-faint); font-size: .86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#acct .acct-actions { flex-wrap: wrap; margin-top: 10px; }
+#acct .acct-danger { color: #d0453b; }
+#acct .acct-form { display: grid; gap: 12px; margin-top: 16px; padding: 16px; border: 1px solid var(--line); border-radius: 18px; }
+#acct .acct-form[hidden] { display: none; }
+#acct .acct-form .field { margin: 0; }
+#acct .acct-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+#acct .acct-err { margin: 0; min-height: 0; color: #d0453b; font-size: .88rem; }
+#acct .acct-err:empty { display: none; }
+#acct .acct-warn { margin: 0; }
+#acct .acct-danger-btn { background: #c0392b !important; color: #fff !important; box-shadow: none !important; }
