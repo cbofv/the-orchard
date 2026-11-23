@@ -103,6 +103,7 @@ The **Social** tab lets friends revise together:
    insert into public.admins (user_id) select id from auth.users where email = 'you@example.com' on conflict do nothing;
    ```
    Then reload the site. A **Badges** tab appears in Social.
+4. Run [`supabase-social-3.sql`](supabase-social-3.sql) the same way, so everyone sees the **Admin** badge (The Orchard logo) next to admins' names.
 
 ## Files
 | File | What it is |
@@ -120,4 +121,5 @@ The **Social** tab lets friends revise together:
 | `social.js`, `social.css` | The Social tab and The Neighbourhood |
 | `supabase-social-setup.sql` | Run once for Social: profiles, friends, notes and their privacy rules |
 | `supabase-social-2.sql` | Run once more for Social: messages, admins and badges |
+| `supabase-social-3.sql` | Lets everyone see who the admins are, for the Admin badge |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |

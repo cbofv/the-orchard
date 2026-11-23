@@ -127,6 +127,7 @@
 
   /* ---------- badges ---------- */
   const BADGES = {
+    admin: { name: "Admin", desc: "Runs The Orchard" },
     crown: { name: "Crown", desc: "Top of the class" },
     diamond: { name: "Diamond", desc: "Rare and brilliant" },
     star: { name: "Star", desc: "Outstanding effort" },
@@ -141,6 +142,7 @@
       <linearGradient id="bd-dia" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2fdff"/><stop offset=".45" stop-color="#8fe0ff"/><stop offset="1" stop-color="#2d6fd6"/></linearGradient>
       <linearGradient id="bd-leaf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9f3c1"/><stop offset=".5" stop-color="#a9c55c"/><stop offset="1" stop-color="#4f7a26"/></linearGradient>
       <linearGradient id="bd-fire" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff0a6"/><stop offset=".5" stop-color="#ff9a3d"/><stop offset="1" stop-color="#d4302a"/></linearGradient>
+      <linearGradient id="bd-olive" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e2ecb6"/><stop offset=".5" stop-color="#a9b77c"/><stop offset="1" stop-color="#5f7034"/></linearGradient>
       <linearGradient id="bd-rose" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffd3df"/><stop offset=".5" stop-color="#ff6a95"/><stop offset="1" stop-color="#b81d55"/></linearGradient>
       <radialGradient id="bd-disc" cx=".5" cy=".3" r=".75"><stop offset="0" stop-color="#3a4030"/><stop offset="1" stop-color="#0c0e09"/></radialGradient>
       <linearGradient id="bd-rim" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fbe7a1"/><stop offset=".5" stop-color="#b8892f"/><stop offset="1" stop-color="#fbe7a1"/></linearGradient>
@@ -149,6 +151,7 @@
   const starPath = (cx, cy, R, r) => Array.from({ length: 10 }, (_, i) => { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; return `${i ? "L" : "M"}${(cx + rr * Math.cos(a)).toFixed(2)} ${(cy + rr * Math.sin(a)).toFixed(2)}`; }).join("") + "z";
   const laurel = () => { let s = ""; for (let i = 0; i < 5; i++) { const a = Math.PI * (0.62 + i * 0.13); [-1, 1].forEach(side => { const x = 16 + side * 8.6 * Math.cos(a), y = 30 - (8.6 * Math.sin(a) * -1 + 23); s += `<ellipse cx="${x.toFixed(2)}" cy="${y.toFixed(2)}" rx="1.7" ry="3.4" transform="rotate(${(side * (40 - i * 22)).toFixed(0)} ${x.toFixed(2)} ${y.toFixed(2)})"/>`; }); } return s; };
   const BADGE_ART = {
+    admin: `<path d="M16 11.2c-2-1.5-7.2-1.5-7.9 3.8-.6 4.6 2.9 9.6 5.5 9.6 1.1 0 1.5-.6 2.4-.6s1.3.6 2.4.6c2.6 0 6.1-5 5.5-9.6-.7-5.3-5.9-5.3-7.9-3.8z" fill="url(#bd-olive)"/><path d="M16 11V8.2c0-1.2.8-2.5 2-2.9" fill="none" stroke="#e8f0c8" stroke-width="1.6" stroke-linecap="round"/><path d="M16.6 8.4c1.6-2 4.2-2 5.2-.9-1.6 1.5-3.6 1.6-5.2.9z" fill="#c9dc8a"/><path d="M11.4 14.4q.8-1.8 2.6-2.1" stroke="#fff" stroke-width="1.1" stroke-linecap="round" opacity=".7"/>`,
     crown: `<path d="M8.5 21.5 7 12.5l5.2 4L16 9.5l3.8 7 5.2-4-1.5 9z" fill="url(#bd-gold)"/><rect x="8.5" y="21.8" width="15" height="2.6" rx="1" fill="url(#bd-gold)"/><circle cx="16" cy="9.2" r="1.3" fill="#fff6d0"/><circle cx="7" cy="12.2" r="1.1" fill="#fff6d0"/><circle cx="25" cy="12.2" r="1.1" fill="#fff6d0"/><circle cx="16" cy="18.6" r="1.3" fill="#e0405a"/>`,
     diamond: `<path d="M10.5 9.5h11l4 5-9.5 10.5L6.5 14.5z" fill="url(#bd-dia)"/><path d="M6.5 14.5h19M12.8 9.5l-2.3 5L16 25l5.5-10.5-2.3-5" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width=".8"/><path d="M11 10l-2.5 3.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round"/>`,
     star: `<path d="${starPath(16, 16.5, 9, 4)}" fill="url(#bd-gold)"/><path d="M13 12.5l1.6-3" stroke="#fff" stroke-width="1.1" stroke-linecap="round" opacity=".8"/>`,
@@ -162,14 +165,17 @@
   const S = {
     me: null, uid: null, profile: null, setup: false, setup2: true, loaded: false, loading: false,
     people: new Map(), requests: [], outgoing: [], notes: [], cheers: new Map(),
-    messages: [], awards: [], isAdmin: false, adminAwards: [],
+    messages: [], awards: [], isAdmin: false, adminAwards: [], adminIds: new Set(),
     seg: "hood", draft: null, thread: null, sig: ""
   };
   try { S.seg = localStorage.getItem("orchard-social-seg") || "hood"; } catch (e) {}
   const friends = () => S.requests.filter(r => r.status === "accepted").map(r => S.people.get(r.from_id === S.uid ? r.to_id : r.from_id)).filter(Boolean);
   const incoming = () => S.requests.filter(r => r.status === "pending" && r.to_id === S.uid).map(r => ({ r, p: S.people.get(r.from_id) })).filter(x => x.p);
   const unreadFrom = id => S.messages.filter(m => m.to_id === S.uid && !m.read_at && (!id || m.from_id === id)).length;
-  const badgesOf = id => S.awards.filter(a => a.user_id === id).sort((a, b) => BADGE_ORDER.indexOf(a.badge) - BADGE_ORDER.indexOf(b.badge));
+  const badgesOf = id => [
+    ...(S.adminIds && S.adminIds.has(id) ? [{ badge: "admin", user_id: id, note: "Runs The Orchard" }] : []),
+    ...S.awards.filter(a => a.user_id === id).sort((a, b) => BADGE_ORDER.indexOf(a.badge) - BADGE_ORDER.indexOf(b.badge))
+  ];
   const badgeRow = (id, n) => badgesOf(id).slice(0, n || 3).map(a => badgeSVG(a.badge, "sm")).join("");
 
   /* ---------- flashcard log: how many cards you review each day ---------- */
@@ -247,7 +253,8 @@
         S.messages = (ms.data || []).reverse();
         S.awards = aw.data || [];
         S.isAdmin = !!adm.data;
-        S.adminCheck = adm.error ? (missingTable(adm.error) ? "missing" : adm.error.message || "error") : adm.data ? "yes" : "no";
+        const ai = await sb.rpc("admin_ids");
+        S.adminIds = new Set(ai.error ? (S.isAdmin ? [S.uid] : []) : (ai.data || []).map(r => (r && r.user_id) || r));
         if (S.isAdmin) { const x = await sb.rpc("admin_awards"); S.adminAwards = x.data || []; }
         const ids = S.notes.map(n => n.id);
         S.cheers = new Map();
@@ -258,7 +265,7 @@
       }
       S.loaded = true;
       const sig = JSON.stringify([[...S.people.values()].map(p => [p.id, p.display_name, p.handle, p.avatar, p.status, p.share_stats, p.stats && [p.stats.weekMins, p.stats.streak, p.stats.cardsWeek, p.stats.mastered], online(p)]),
-        S.requests, S.outgoing, S.notes.map(n => n.id), [...S.cheers], S.messages.map(m => [m.id, !!m.read_at]), S.awards.map(a => a.id), S.isAdmin, S.adminAwards.map(a => a.id)]);
+        S.requests, S.outgoing, S.notes.map(n => n.id), [...S.cheers], S.messages.map(m => [m.id, !!m.read_at]), S.awards.map(a => a.id), [...S.adminIds], S.isAdmin, S.adminAwards.map(a => a.id)]);
       if (sig !== S.sig || !root.querySelector(".page-head")) { S.sig = sig; if (!quiet || location.hash === "#social") render(); }
       heartbeat();
     } catch (e) {
@@ -758,15 +765,7 @@
       </div></form>`;
   }
   function suggestHandle() { return ((S.me.name || "student").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 14) || "student") + Math.floor(Math.random() * 90 + 10); }
-  function adminNote() {
-    const c = S.adminCheck;
-    if (c === "yes") return `<p class="nb-role ok"><b>Admin access: on.</b> You can give badges from the Badges tab.</p>`;
-    if (c === "missing") return `<p class="nb-role"><b>Admin access: not set up.</b> The badges part of the database isn’t installed yet. Run <code>supabase-social-2.sql</code> in Supabase, then reload.</p>`;
-    if (c === "no") return `<p class="nb-role"><b>Admin access: off.</b> This account (${escH(S.me && S.me.email)}) isn’t in the admins list in Supabase. Add it there to get the Badges tab.</p>`;
-    if (c) return `<p class="nb-role"><b>Admin access: couldn’t check.</b> ${escH(c)}</p>`;
-    return "";
-  }
-  function profileHTML() { return `<section class="o-card nb-profile"><h3>Profile</h3>${editorHTML(S.profile)}${adminNote()}</section>`; }
+  function profileHTML() { return `<section class="o-card nb-profile"><h3>Profile</h3>${editorHTML(S.profile)}</section>`; }
   function renderOnboarding() {
     root.innerHTML = shell(`<div class="nb-welcome">
       <div class="nb-welcome-art"><div class="nb-welcome-grid"></div>

@@ -370,6 +370,5 @@
 #o .nb-sw { width: 30px; height: 30px; border-radius: 50%; border: 2px solid var(--o-surface); background: radial-gradient(120% 90% at 30% 15%, color-mix(in srgb, #fff 16%, var(--c)), var(--c) 60%); box-shadow: 0 0 0 1px var(--o-border); cursor: pointer; }
 #o .nb-sw[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--acc); }
 #o .nb-opt { grid-template-columns: 90px 1fr; }
-#o .nb-role { margin: 18px 0 0; padding: 12px 14px; border-radius: 10px; border: 1px dashed var(--o-border-strong); font-size: .84rem; color: var(--ink-soft); }
-#o .nb-role.ok { border-style: solid; border-color: color-mix(in srgb, var(--acc) 45%, transparent); background: color-mix(in srgb, var(--acc) 8%, transparent); }
-#o .nb-role b { color: var(--ink); }
+/* Admin badge: olive coin */
+#o .nb-b-admin circle:first-of-type { fill: #10140b; }
