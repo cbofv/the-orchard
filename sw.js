@@ -2,8 +2,8 @@
    Network first for everything on this site, so you always get the latest
    version when online; the saved copy is used when you're offline.
    Requests to other sites (Supabase, fonts) are never cached here. */
-const CACHE = "orchard-v1";
-const SHELL = ["./", "index.html", "login.html", "ui.css", "ui.js", "account.js", "account.css", "ai-chat.js", "ai-chat.css",
+const CACHE = "orchard-v2";
+const SHELL = ["./", "index.html", "login.html", "ui.css", "ui.js", "account.js", "account.css",
   "social.js", "social.css", "supabase.js", "config.js", "icon.svg", "icon-192.png", "icon-512.png", "manifest.webmanifest"];
 
 self.addEventListener("install", e => {

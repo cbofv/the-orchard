@@ -17,7 +17,6 @@
   ],
   "shortcuts": [
     { "name": "Study log", "url": "./#study-log", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "Social", "url": "./#social", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
-    { "name": "AI tutor", "url": "./#ai", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+    { "name": "Social", "url": "./#social", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
   ]
 }

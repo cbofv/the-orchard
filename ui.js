@@ -116,7 +116,6 @@
          <dt>Go to Calendar</dt><dd><kbd>G</kbd><kbd>C</kbd></dd>
          <dt>Go to Study log</dt><dd><kbd>G</kbd><kbd>L</kbd></dd>
          <dt>Go to Grades</dt><dd><kbd>G</kbd><kbd>G</kbd></dd>
-         <dt>Go to AI tutor</dt><dd><kbd>G</kbd><kbd>A</kbd></dd>
          <dt>Settings</dt><dd><kbd>${mod}</kbd><kbd>,</kbd></dd>
          <dt>Show this list</dt><dd><kbd>?</kbd></dd>
          <dt>Close a panel</dt><dd><kbd>Esc</kbd></dd>
@@ -129,7 +128,7 @@
 
   const typing = t => t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
   let gPending = 0;
-  const GO = { h: "home", c: "calendar", l: "study-log", g: "grades", a: "ai", e: "exams", p: "past-papers", q: "quests" };
+  const GO = { h: "home", c: "calendar", l: "study-log", g: "grades", e: "exams", p: "past-papers", q: "quests" };
   document.addEventListener("keydown", e => {
     if ((e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === "k") { e.preventDefault(); openSearch(); return; }
     if ((e.metaKey || e.ctrlKey) && e.key === ",") { e.preventDefault(); document.getElementById("prefs-btn")?.click(); return; }
@@ -264,7 +263,6 @@ const O_SUBJECT_COLOURS = {
       head.insertAdjacentHTML("afterbegin", `<span class="o-sicon" aria-hidden="true"><svg viewBox="0 0 24 24">${icon}</svg></span>`);
       head.insertAdjacentHTML("beforeend", `<div class="o-sactions">
         <button type="button" class="chip" data-o-act="log"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>Log a session</button>
-        <button type="button" class="chip" data-o-act="tutor"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/></svg>Ask the tutor</button>
       </div>`);
     }
     const topics = def.el.topics;
@@ -285,12 +283,6 @@ const O_SUBJECT_COLOURS = {
         setTimeout(() => {
           const f = document.getElementById("f-subject");
           if (f) { f.value = def.subject; f.dispatchEvent(new Event("change")); document.getElementById("f-topic")?.focus(); }
-        }, 60);
-      } else if (act === "tutor") {
-        location.hash = "#ai";
-        setTimeout(() => {
-          const i = document.getElementById("ai-input");
-          if (i) { i.value = `I'm revising ${def.subject}. `; i.focus(); i.dispatchEvent(new Event("input")); }
         }, 60);
       } else if (act === "cards") {
         root.querySelector('.seg [data-seg="cards"]')?.click();
@@ -544,32 +536,4 @@ const O_SUBJECT_COLOURS = {
   render();
   setTimeout(render, 2500); setTimeout(render, 8000);
   addEventListener("hashchange", () => { if ((location.hash || "#home") === "#home") render(); });
-})();
-
-/* ==========================================================================
-   "Ask the tutor" on every subtopic page
-   ========================================================================== */
-(function explainThis() {
-  "use strict";
-  if (typeof renderSubjectDetail !== "function") return;
-  const orig = renderSubjectDetail;
-  renderSubjectDetail = function (def) {
-    const out = orig.apply(this, arguments);
-    try {
-      const s = def.subs.find(x => x.key === def.ui.detailKey);
-      const title = def.el.detail.querySelector(".sub-detail > .page-title");
-      if (s && title && !def.el.detail.querySelector(".o-explain")) {
-        title.insertAdjacentHTML("afterend", `<div class="o-explain"><button type="button" class="chip" data-explain="explain"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/></svg>Explain this</button><button type="button" class="chip" data-explain="quiz">Quiz me on it</button><button type="button" class="chip" data-explain="exam">Exam question</button></div>`);
-        def.el.detail.querySelector(".o-explain").addEventListener("click", e => {
-          const b = e.target.closest("[data-explain]"); if (!b) return;
-          const where = `“${s.name}” (${s.topic.name}, GCSE ${def.subject})`;
-          const msg = { explain: `Explain ${where} clearly at GCSE level, with an example, then ask me one quick question to check I’ve got it.`,
-            quiz: `Quiz me on ${where}. Ask one question at a time, wait for my answer, then mark it and give the model answer.`,
-            exam: `Give me one exam-style question on ${where} with the marks shown. Wait for my answer, then mark it like an examiner.` }[b.dataset.explain];
-          if (window.orchardAsk) window.orchardAsk(msg);
-        });
-      }
-    } catch (e) {}
-    return out;
-  };
 })();

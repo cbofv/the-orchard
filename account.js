@@ -19,7 +19,7 @@
   });
   sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") toLogin(); });
 
-  /* For other parts of the app (the AI tutor) that call Supabase directly */
+  /* For other parts of the app (the Social tab) that call Supabase directly */
   window.orchardAuth = {
     url: cfg.supabaseUrl.replace(/\/+$/, ""),
     key: cfg.supabaseKey,

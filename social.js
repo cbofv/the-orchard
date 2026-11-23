@@ -351,7 +351,7 @@
     { id: "friends", label: "Friends", icon: "people", x: 560, z: 1630, go: "seg:friends", hue: "#7ed08a" },
     { id: "study", label: "Study log", icon: "clock", x: -450, z: 1080, go: "#study-log", hue: "#c3d48f" },
     { id: "rooms", label: "Study rooms", icon: "door", x: -150, z: 1140, go: "seg:rooms", hue: "#c59bff" },
-    { id: "ai", label: "AI tutor", icon: "spark", x: 150, z: 1110, go: "#ai", hue: "#8fe0ff" },
+    { id: "exams", label: "Exams", icon: "clock", x: 150, z: 1110, go: "#exams", hue: "#8fe0ff" },
     { id: "you", label: "Profile", icon: "smile", x: 450, z: 1070, go: "seg:profile", hue: "#ff8fb1" }
   ];
   const latestNote = id => S.notes.find(n => n.user_id === id && Date.now() - new Date(n.created_at).getTime() < 48 * 3600e3);
@@ -364,7 +364,7 @@
     if (st.cardsToday) return "boards";
     if (latestNote(p.id)) return "board";
     const h = [...String(p.id)].reduce((a, c) => a + c.charCodeAt(0), 0);
-    return ["boards", "friends", "study", "board", "ai", "rooms"][h % 6];
+    return ["boards", "friends", "study", "board", "exams", "rooms"][h % 6];
   }
 
   let P = null; // plaza runtime

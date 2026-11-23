@@ -614,10 +614,6 @@
 #o .o-linkbtn:hover { color: var(--acc); }
 @media (max-width: 900px) { #o .o-recap-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } #o .o-recap-cols { grid-template-columns: 1fr; } }
 
-/* ---------- Ask the tutor on subtopics ---------- */
-#o .o-explain { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0 18px; }
-#o .o-explain .chip { display: inline-flex; align-items: center; gap: 6px; }
-#o .o-explain svg { width: 14px; height: 14px; fill: none; stroke: var(--acc); stroke-width: 1.8; stroke-linejoin: round; }
 #o .o-install svg { stroke-width: 1.8; }
 @media (min-width: 1200px) {
   #o #view-home > .o-recap { grid-row: 2; }
