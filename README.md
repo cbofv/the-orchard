@@ -85,17 +85,24 @@ retries on another Claude model (Anthropic's "fallbacks" feature).
 ## Social (optional)
 
 The **Social** tab lets friends revise together:
-- **The Neighbourhood**: a little park where your neighbours wander around, with their latest notes in speech bubbles. Click one to see their week, streak and latest note, and cheer them on. Until friends join, three guides (Hazel, Rowan and Juniper) share study tips.
-- **Notice board**: short friends-only posts (140 characters) with cheers.
+- **The Neighbourhood**: a 3D plaza where glossy tiles float above a grid floor and you and your friends gather around them, with the latest notes in speech bubbles. Drag to look around and zoom with the − / + controls. Click a tile to open that section, or click a person to see their week, badges and latest note, then message or cheer them. Until friends join, three guides (Hazel, Rowan and Juniper) share study tips.
+- **Messages**: private one-to-one chats between friends, with unread counts and "Seen".
+- **Leaderboards**: flashcards reviewed this week, cards mastered, study time and streaks, for you and your friends.
+- **Notice board**: short friends-only posts with cheers.
 - **Friends**: add people by their exact @handle, then accept or decline requests.
-- **Your neighbour**: build your character and choose your name, handle and status, plus whether to share study stats.
+- **Your neighbour**: build your character and choose your name, handle, status and whether to share stats.
+- **Badges** (admins only): give Crown, Diamond, Star, Laurel, Flame and Heart badges with a note, or take them back. Badges show next to names, and someone's top badge floats above their head in the plaza.
 
-**Privacy:** nothing is public. People can only find you by typing your exact handle. Only accepted friends see your notes, online status and stats (time this week, streak and top subject, never grades or ratings). You can remove a friend at any time.
+**Privacy:** nothing is public. People can only find you by typing your exact handle. Only accepted friends see your notes, stats, badges or online status, and only friends can message you. Shared stats are study time, streak, top subject and flashcard counts, never grades or ratings.
 
 ### Setup
-In Supabase, open **SQL Editor → New query**, paste in all of
-[`supabase-social-setup.sql`](supabase-social-setup.sql) and click **Run**. Until you do,
-the Social tab shows "Social isn't switched on yet".
+1. In Supabase, open **SQL Editor → New query**, paste in all of [`supabase-social-setup.sql`](supabase-social-setup.sql) and click **Run**.
+2. Do the same with [`supabase-social-2.sql`](supabase-social-2.sql) for messages and badges.
+3. **Make yourself an admin** (to give badges): run this line in the SQL Editor, with the email you sign in with:
+   ```sql
+   insert into public.admins (user_id) select id from auth.users where email = 'you@example.com' on conflict do nothing;
+   ```
+   Then reload the site. A **Badges** tab appears in Social.
 
 ## Files
 | File | What it is |
@@ -112,4 +119,5 @@ the Social tab shows "Social isn't switched on yet".
 | `supabase/functions/ai-chat/index.ts` | The AI tutor's server code (a Supabase Edge Function) |
 | `social.js`, `social.css` | The Social tab and The Neighbourhood |
 | `supabase-social-setup.sql` | Run once for Social: profiles, friends, notes and their privacy rules |
+| `supabase-social-2.sql` | Run once more for Social: messages, admins and badges |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |

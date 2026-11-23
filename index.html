@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-GB" data-theme="daylight">
+<html lang="en-GB" data-theme="tinted" data-tone="olive-noir">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -14,8 +14,8 @@
   try { p = JSON.parse(localStorage.getItem("orchard-prefs") || "{}") || {}; if (!p.theme && localStorage.getItem("orchard-theme") === "black-glass") p.theme = "black-glass"; } catch (e) {}
   var d = document.documentElement, sizes = { s: "93.75%", m: "100%", l: "112.5%", xl: "125%" };
   var tones = { "olive-white": "daylight", "olive-noir": "tinted", "champagne": "tinted", "ivory-navy": "daylight", "daylight": "daylight", "rouge-noir": "tinted", "blue-coral": "tinted", "cognac": "tinted", "anthracite": "tinted", "white-sand": "daylight" };
-  if (!p.theme || p.theme === "nebula") p.theme = "olive-white";
-  if (!tones[p.theme] && p.theme !== "black-glass") p.theme = "olive-white";
+  if (!p.theme || p.theme === "nebula") p.theme = "olive-noir";
+  if (!tones[p.theme] && p.theme !== "black-glass") p.theme = "olive-noir";
   d.dataset.theme = tones[p.theme] || "black-glass";
   if (tones[p.theme]) d.dataset.tone = p.theme; else d.removeAttribute("data-tone");
   if (p.font === "editorial" || p.font === "clean") {
@@ -11858,14 +11858,14 @@ initStore();
    SETTINGS — theme, text size and motion (remembered on this device)
    ============================================================ */
 const PREFS_KEY = "orchard-prefs";
-const prefs = { theme: "olive-white", size: "m", motion: "auto", fx3d: "off", font: "default" };
+const prefs = { theme: "olive-noir", size: "m", motion: "auto", fx3d: "off", font: "default" };
 const THEME_TONES = { "olive-white": "daylight", "olive-noir": "tinted", "champagne": "tinted", "ivory-navy": "daylight", "daylight": "daylight", "rouge-noir": "tinted", "blue-coral": "tinted", "cognac": "tinted", "anthracite": "tinted", "white-sand": "daylight" };
 const THEME_META = { "olive-white": "#f6f5ef", "olive-noir": "#070806", champagne: "#0a0907", "ivory-navy": "#f7f5f0", "black-glass": "#000000", daylight: "#f4f4f2", "rouge-noir": "#0a0405", "blue-coral": "#020b0a", cognac: "#0b0705", anthracite: "#111114", "white-sand": "#e9e5df" };
 try {
   const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") || {};
   if (!saved.theme && localStorage.getItem("orchard-theme") === "black-glass") saved.theme = "black-glass";
   Object.assign(prefs, saved);
-  if (prefs.theme === "nebula" || !(THEME_TONES[prefs.theme] || prefs.theme === "black-glass")) prefs.theme = "olive-white";
+  if (prefs.theme === "nebula" || !(THEME_TONES[prefs.theme] || prefs.theme === "black-glass")) prefs.theme = "olive-noir";
 } catch (e) {}
 const PREF_SIZES = { s: "93.75%", m: "100%", l: "112.5%", xl: "125%" };
 const sysReduce = matchMedia("(prefers-reduced-motion: reduce)");
