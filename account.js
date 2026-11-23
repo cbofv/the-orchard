@@ -19,6 +19,14 @@
   });
   sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") toLogin(); });
 
+  /* For other parts of the app (the AI tutor) that call Supabase directly */
+  window.orchardAuth = {
+    url: cfg.supabaseUrl.replace(/\/+$/, ""),
+    key: cfg.supabaseKey,
+    me: () => mePromise,
+    token: async () => { const { data } = await sb.auth.getSession(); if (!data.session) { toLogin(); throw new Error("Signed out"); } return data.session.access_token; },
+  };
+
   /* ---------- talking to the docs table ---------- */
   let uid = null;
   const prefix = () => `data/users/${uid}/`;

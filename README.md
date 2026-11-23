@@ -49,6 +49,39 @@ This makes the links in confirmation and password-reset emails take people back 
 - **In the app**, Settings (gear icon) → **Account** lets you change your name or
   password, download or restore a backup, sign out, or delete your account.
 
+## AI tutor (optional)
+
+The **AI tutor** page lets each person chat with Claude about their revision. It can
+explain topics, quiz them and mark answers. It knows their subjects and upcoming exams.
+Chats are saved to their account.
+
+The Claude API is **paid**, billed per use. The tutor uses Claude Opus 5.5 and is limited
+to **40 messages per person per day** to keep costs in check. The key is kept in Supabase
+and never sent to the browser.
+
+### Setup
+1. **Get a Claude API key:** sign in at platform.claude.com, add some credit under
+   **Billing**, then create a key under **API Keys**. You can set a monthly spend limit
+   there too.
+2. **Create the usage table:** in Supabase, go to **SQL Editor → New query**, paste in
+   [`supabase-ai-setup.sql`](supabase-ai-setup.sql) and click **Run**.
+3. **Add the key as a secret:** in Supabase, go to **Edge Functions → Secrets** and add
+   `ANTHROPIC_API_KEY` with your key as the value. Optionally add `AI_DAILY_LIMIT` (e.g.
+   `20`) to change the daily limit.
+4. **Deploy the function:**
+   1. In Supabase, go to **Edge Functions → Deploy a new function → Via Editor**.
+   2. Name it exactly **`ai-chat`**.
+   3. Replace the example code with everything in
+      [`supabase/functions/ai-chat/index.ts`](supabase/functions/ai-chat/index.ts), then click **Deploy**.
+   4. In the function's **Details** tab, turn **off** "Verify JWT" (sometimes labelled
+      "Enforce JWT verification") and save. The function checks sign-in itself, and this
+      setting can block requests from newer Supabase projects.
+
+Until this is done, the AI tutor page shows "The AI tutor isn't set up yet".
+
+If Claude declines to answer something for safety reasons, the request automatically
+retries on another Claude model (Anthropic's "fallbacks" feature).
+
 ## Files
 | File | What it is |
 |---|---|
@@ -59,3 +92,6 @@ This makes the links in confirmation and password-reset emails take people back 
 | `config.js` | Your Supabase URL and key (**edit this**) |
 | `supabase.js` | Supabase's browser library (v2.117.2), kept in the repo so the site has no outside dependencies |
 | `supabase-setup.sql` | Run once in Supabase to create the data table and its access rules |
+| `ai-chat.js`, `ai-chat.css` | The AI tutor page |
+| `supabase-ai-setup.sql` | Run once for the AI tutor: daily message limits |
+| `supabase/functions/ai-chat/index.ts` | The AI tutor's server code (a Supabase Edge Function) |
