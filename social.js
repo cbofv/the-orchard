@@ -247,6 +247,7 @@
         S.messages = (ms.data || []).reverse();
         S.awards = aw.data || [];
         S.isAdmin = !!adm.data;
+        S.adminCheck = adm.error ? (missingTable(adm.error) ? "missing" : adm.error.message || "error") : adm.data ? "yes" : "no";
         if (S.isAdmin) { const x = await sb.rpc("admin_awards"); S.adminAwards = x.data || []; }
         const ids = S.notes.map(n => n.id);
         S.cheers = new Map();
@@ -757,7 +758,15 @@
       </div></form>`;
   }
   function suggestHandle() { return ((S.me.name || "student").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 14) || "student") + Math.floor(Math.random() * 90 + 10); }
-  function profileHTML() { return `<section class="o-card nb-profile"><h3>Profile</h3>${editorHTML(S.profile)}</section>`; }
+  function adminNote() {
+    const c = S.adminCheck;
+    if (c === "yes") return `<p class="nb-role ok"><b>Admin access: on.</b> You can give badges from the Badges tab.</p>`;
+    if (c === "missing") return `<p class="nb-role"><b>Admin access: not set up.</b> The badges part of the database isn’t installed yet. Run <code>supabase-social-2.sql</code> in Supabase, then reload.</p>`;
+    if (c === "no") return `<p class="nb-role"><b>Admin access: off.</b> This account (${escH(S.me && S.me.email)}) isn’t in the admins list in Supabase. Add it there to get the Badges tab.</p>`;
+    if (c) return `<p class="nb-role"><b>Admin access: couldn’t check.</b> ${escH(c)}</p>`;
+    return "";
+  }
+  function profileHTML() { return `<section class="o-card nb-profile"><h3>Profile</h3>${editorHTML(S.profile)}${adminNote()}</section>`; }
   function renderOnboarding() {
     root.innerHTML = shell(`<div class="nb-welcome">
       <div class="nb-welcome-art"><div class="nb-welcome-grid"></div>
