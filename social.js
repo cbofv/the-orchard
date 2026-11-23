@@ -32,7 +32,7 @@
     chat: '<path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.5 3.5v-3.5h0a2 2 0 0 1-2-2z"/><path d="M8.5 9.5h7M8.5 12.5h4"/>',
     trophy: '<path d="M8 4.5h8v5a4 4 0 0 1-8 0z"/><path d="M8 6.5H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6.5h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13.5v3M9 19.5h6M10 16.5h4v3h-4z"/>',
     people: '<circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="8" r="2.6"/><path d="M15.5 13.2c.4-.1.7-.1 1-.1 2.3 0 4.1 1.5 4.6 4.4"/>',
-    smile: '<rect x="4" y="4" width="16" height="16" rx="5"/><path d="M9 10v.5M15 10v.5M8.5 14q3.5 3 7 0"/>',
+    smile: '<circle cx="12" cy="8.5" r="3.8"/><path d="M4.5 20c1-3.8 3.8-6 7.5-6s6.5 2.2 7.5 6"/>',
     pin: '<rect x="4" y="5" width="16" height="14" rx="2.5"/><path d="M8 9h8M8 12h8M8 15h5"/>',
     clock: '<circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/>',
     spark: '<path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/>',
@@ -41,48 +41,88 @@
   };
   const icon = (k, cls) => `<svg class="${cls || "nb-ico"}" viewBox="0 0 24 24" aria-hidden="true">${ICON[k]}</svg>`;
 
-  /* ---------- avatars (original "pebble" neighbours) ---------- */
-  const COLOURS = ["#e8735a", "#f2b84b", "#7cc47f", "#4fb3a9", "#5b8def", "#9b7be0", "#e77fb1", "#a7856a", "#6d7b8c"];
-  const EYES = ["Dots", "Happy", "Sleepy", "Wink", "Wide"];
-  const MOUTHS = ["Smile", "Grin", "Oh", "Calm", "Cat"];
-  const HATS = ["None", "Beanie", "Cap", "Headphones", "Sprout", "Grad cap", "Bow", "Glasses"];
-  const DEFAULT_AV = { c: 4, e: 0, m: 0, h: 4 };
-  const shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); const ch = i => Math.max(0, Math.min(255, Math.round(((n >> i) & 255) * f))); return `rgb(${ch(16)},${ch(8)},${ch(0)})`; };
-  function avatarSVG(av, extraClass) {
-    const a = { ...DEFAULT_AV, ...(av || {}) };
-    const col = COLOURS[a.c % COLOURS.length] || COLOURS[0];
-    const dk = shade(col, .72), lt = shade(col, 1.18);
-    const eye = ({
-      0: `<circle cx="40" cy="52" r="4.2"/><circle cx="60" cy="52" r="4.2"/><circle cx="41.4" cy="50.6" r="1.3" fill="#fff"/><circle cx="61.4" cy="50.6" r="1.3" fill="#fff"/>`,
-      1: `<path d="M35 53q5-6 10 0M55 53q5-6 10 0" fill="none" stroke="#2a2622" stroke-width="3" stroke-linecap="round"/>`,
-      2: `<path d="M35 52q5 4 10 0M55 52q5 4 10 0" fill="none" stroke="#2a2622" stroke-width="3" stroke-linecap="round"/>`,
-      3: `<circle cx="40" cy="52" r="4.2"/><path d="M55 53q5-5 10 0" fill="none" stroke="#2a2622" stroke-width="3" stroke-linecap="round"/>`,
-      4: `<circle cx="40" cy="52" r="5.5" fill="#fff"/><circle cx="60" cy="52" r="5.5" fill="#fff"/><circle cx="41" cy="53" r="3"/><circle cx="61" cy="53" r="3"/>`
-    })[a.e] || "";
-    const mouth = ({
-      0: `<path d="M44 63q6 5 12 0" fill="none" stroke="#2a2622" stroke-width="2.6" stroke-linecap="round"/>`,
-      1: `<path d="M42 61h16q-1 9-8 9t-8-9z" fill="#2a2622"/><path d="M45 66q5 3 10 0" fill="#e9837c"/>`,
-      2: `<ellipse cx="50" cy="65" rx="3.6" ry="4.2" fill="#2a2622"/>`,
-      3: `<path d="M45 64h10" stroke="#2a2622" stroke-width="2.6" stroke-linecap="round"/>`,
-      4: `<path d="M43 62q3.5 4 7 0q3.5 4 7 0" fill="none" stroke="#2a2622" stroke-width="2.4" stroke-linecap="round"/>`
-    })[a.m] || "";
-    const hat = ({
-      1: `<path d="M22 36q2-26 28-27t28 27z" fill="${shade(COLOURS[(a.c + 4) % COLOURS.length], .95)}"/><rect x="20" y="31" width="60" height="9" rx="4.5" fill="${shade(COLOURS[(a.c + 4) % COLOURS.length], .75)}"/><circle cx="50" cy="8" r="5.5" fill="#fff"/>`,
-      2: `<path d="M24 34q1-22 26-22t26 22z" fill="#2f3b52"/><path d="M60 31q20-1 26 5l-26 1z" fill="#24304a"/><circle cx="50" cy="13" r="2.5" fill="#24304a"/>`,
-      3: `<path d="M20 50q0-36 30-36t30 36" fill="none" stroke="#2f3238" stroke-width="5" stroke-linecap="round"/><rect x="13" y="44" width="12" height="20" rx="5" fill="#2f3238"/><rect x="75" y="44" width="12" height="20" rx="5" fill="#2f3238"/>`,
-      4: `<path d="M50 22v-9" stroke="#5c8a3a" stroke-width="3" stroke-linecap="round"/><path d="M50 15q-12-10-17 1q10 6 17-1zM50 13q10-11 17-2q-8 8-17 2z" fill="#79b552"/>`,
-      5: `<path d="M18 22 50 10l32 12-32 12z" fill="#262a33"/><path d="M33 27v10q17 8 34 0V27l-17 7z" fill="#30353f"/><path d="M78 23v14" stroke="#e6b23a" stroke-width="2"/><circle cx="78" cy="38" r="3" fill="#e6b23a"/>`,
-      6: `<path d="M50 23q-15-12-17 0q2 11 17 0zM50 23q15-12 17 0q-2 11-17 0z" fill="#e2566b"/><circle cx="50" cy="23" r="4.5" fill="#c43e55"/>`,
-      7: `<g fill="none" stroke="#2a2622" stroke-width="2.4"><circle cx="40" cy="52" r="8"/><circle cx="60" cy="52" r="8"/><path d="M48 52h4M32 50l-8-3M68 50l8-3"/></g>`
-    })[a.h] || "";
-    return `<svg class="nb-av${extraClass ? " " + extraClass : ""}" viewBox="0 0 100 120" aria-hidden="true">
-      <ellipse cx="37" cy="108" rx="10" ry="6" fill="${dk}"/><ellipse cx="63" cy="108" rx="10" ry="6" fill="${dk}"/>
-      <path d="M50 18c22 0 34 18 34 44 0 28-14 46-34 46S16 90 16 62c0-26 12-44 34-44z" fill="${col}"/>
-      <path d="M50 18c22 0 34 18 34 44 0 6-.7 11.6-2 16.6C77 50 66 30 46 18.3c1.3-.2 2.6-.3 4-.3z" fill="${lt}" opacity=".55"/>
-      <ellipse cx="50" cy="88" rx="18" ry="14" fill="#fff" opacity=".18"/>
-      <ellipse cx="31" cy="64" rx="5.5" ry="3.4" fill="#ff8a8a" opacity=".45"/><ellipse cx="69" cy="64" rx="5.5" ry="3.4" fill="#ff8a8a" opacity=".45"/>
-      <g fill="#2a2622">${eye}</g>${mouth}${hat}
-    </svg>`;
+  /* ---------- profile pictures: initials, an emoji or a line icon ---------- */
+  const AV_BG = [
+    ["Olive", "#556b2f"], ["Sage", "#6f8250"], ["Forest", "#2f5233"], ["Teal", "#1f5f5b"],
+    ["Navy", "#22365a"], ["Slate", "#475569"], ["Graphite", "#2b2f36"], ["Plum", "#5b3a5f"],
+    ["Wine", "#7a2e3a"], ["Clay", "#8a5a3b"], ["Sand", "#a89068"], ["Gold", "#9a7b2f"]
+  ];
+  const EMOJI = [
+    ["Study", ["📚", "📖", "📝", "✏️", "🖊️", "📐", "📏", "🧮", "🗂️", "📎", "🎓", "🏫", "💼", "🗓️", "⏳", "🕰️"]],
+    ["Science", ["🔬", "🧪", "🧬", "🔭", "⚗️", "🧲", "⚛️", "🌡️", "💊", "🩺", "🧠", "💡", "🔋", "⚙️", "🛰️", "🚀"]],
+    ["World", ["🌍", "🗺️", "🧭", "🏛️", "⚖️", "🏔️", "⛰️", "🌋", "🌊", "🏝️", "🌙", "☀️", "⭐", "☁️", "❄️", "⚡"]],
+    ["Nature", ["🌱", "🌿", "🍃", "🌳", "🌲", "🌵", "🌸", "🌻", "🍁", "🍀", "🍎", "🍏", "🍋", "🍊", "🫐", "🥑"]],
+    ["Animals", ["🦉", "🦊", "🐺", "🦁", "🐯", "🐼", "🐨", "🐢", "🐬", "🐳", "🦋", "🐝", "🦅", "🦢", "🐧", "🦔"]],
+    ["Interests", ["🎧", "🎵", "🎹", "🎸", "🎻", "🎨", "📷", "🎬", "♟️", "🧩", "🎯", "⚽", "🏀", "🎾", "🏐", "🏃", "🚴", "🏊", "🧗", "🛹", "☕", "🍵", "✈️", "⚓", "🔑", "🛡️", "💎", "🏆", "🥇", "🔥"]]
+  ];
+  const EMOJI_SET = new Set(EMOJI.flatMap(g => g[1]));
+  const ICONS = {
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+    pen: '<path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+    feather: '<path d="M20 4c-7 0-13 5-13 12v4"/><path d="M7 16h6M9 12h7M12 8h6"/><path d="M20 4c0 7-4 12-11 12"/>',
+    cap: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c3 2.5 9 2.5 12 0v-5M22 9v6"/>',
+    flask: '<path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9V3"/><path d="M7 15h10"/>',
+    atom: '<circle cx="12" cy="12" r="1.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="9" ry="3.6" transform="rotate(120 12 12)"/>',
+    dna: '<path d="M7 3c0 6 10 6 10 12s-10 6-10 6M17 3c0 6-10 6-10 12"/><path d="M8.5 7h7M8.5 17h7M10 12h4"/>',
+    microscope: '<path d="M6 21h12M9 21a6 6 0 0 0 9-5"/><path d="M10 4l3 1.5-3 6-3-1.5z"/><path d="M8.5 13l-1 2"/><circle cx="14" cy="15" r="2"/>',
+    telescope: '<path d="M4 14l12-6 2 4-12 6z"/><path d="M16 8l3-1.5 1.5 3L18 11"/><path d="M10 15l-3 6M12 14l3 7"/>',
+    globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 2.8 3.6 5.8 3.6 9s-1 6.2-3.6 9c-2.6-2.8-3.6-5.8-3.6-9s1-6.2 3.6-9z"/>',
+    compass: '<circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
+    calc: '<rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
+    sigma: '<path d="M17 5H7l6 7-6 7h10"/>',
+    pi: '<path d="M4 7h16M8 7v12M16 7v9a3 3 0 0 0 3 3"/>',
+    func: '<path d="M14 4a3 3 0 0 0-3 3v10a3 3 0 0 1-3 3M7 11h7M15 13l5 5M20 13l-5 5"/>',
+    brain: '<path d="M12 5.5a3.5 3.5 0 0 0-6.4 1.9A3.3 3.3 0 0 0 5 13.6a3.4 3.4 0 0 0 4 4.4 3 3 0 0 0 3 1.5zM12 5.5a3.5 3.5 0 0 1 6.4 1.9 3.3 3.3 0 0 1 .6 6.2 3.4 3.4 0 0 1-4 4.4 3 3 0 0 1-3 1.5"/>',
+    bulb: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',
+    target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+    trophy: '<path d="M8 4h8v5a4 4 0 0 1-8 0z"/><path d="M8 6H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13v3M9 20h6M10 16h4v4h-4z"/>',
+    star: '<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+    bolt: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+    flame: '<path d="M12 22a7 7 0 0 0 7-7c0-5-5-6-5-12-3 2-6 5.5-6 9 0 1-1 2-2 1.5-.7 1-1 2.4-1 3.5a7 7 0 0 0 7 5z"/>',
+    leaf: '<path d="M5 19c0-8.3 5.7-14 14-14 0 8.3-5.7 14-14 14z"/><path d="M5 19l8-8"/>',
+    tree: '<path d="M12 21v-5M8 16h8l-4-12-4 12zM6 16h12"/>',
+    mountain: '<path d="M3 20h18L14 7l-3.5 6L8 10z"/><path d="M12.5 9.5l1.5 2 1.5-2"/>',
+    wave: '<path d="M2 12c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3 2.5 3 5 3M2 17c2.5 0 2.5-3 5-3s2.5 3 5 3 2.5-3 5-3 2.5 3 5 3"/>',
+    sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+    moon: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+    music: '<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+    headphones: '<path d="M3 17v-4a9 9 0 0 1 18 0v4"/><rect x="3" y="14" width="4" height="7" rx="1.5"/><rect x="17" y="14" width="4" height="7" rx="1.5"/>',
+    camera: '<path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13.5" r="3.5"/>',
+    palette: '<path d="M12 3a9 9 0 0 0 0 18c1.5 0 2-1 2-2s-1-1.5-1-2.5S14 15 15 15h2a4 4 0 0 0 4-4c0-4.4-4-8-9-8z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+    code: '<path d="m8 8-4 4 4 4M16 8l4 4-4 4M14 5l-4 14"/>',
+    terminal: '<rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="m7 9 3 3-3 3M12 15h5"/>',
+    cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+    rocket: '<path d="M12 15l-3-3c1-4 4-8 10-9-1 6-5 9-9 10z"/><path d="M9 12l-4 1 2-4h3M12 15l-1 4 4-2v-3"/><circle cx="15" cy="9" r="1.5"/>',
+    plane: '<path d="M10.5 4.5 13 3l1.5 1.5-2 8.5 6 2.5-1 2-6.5-1-3.5 4-1.5-.5 1.5-5-4-2 1-2 3 .5z"/>',
+    anchor: '<circle cx="12" cy="5" r="2"/><path d="M12 7v14M5 12H3a9 9 0 0 0 18 0h-2M8 11h8"/>',
+    key: '<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+    shield: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+    heart: '<path d="M12 20s-8-5-8-11a4.5 4.5 0 0 1 8-2.6A4.5 4.5 0 0 1 20 9c0 6-8 11-8 11z"/>',
+    coffee: '<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5z"/><path d="M17 11h1.5a2.5 2.5 0 0 1 0 5H17M8 3v3M12 3v3"/>',
+    bike: '<circle cx="6" cy="16" r="4"/><circle cx="18" cy="16" r="4"/><path d="M6 16l4-8h5l3 8M10 8l2 8M14 5h3"/>',
+    run: '<circle cx="14" cy="4.5" r="2"/><path d="M6 20l3.5-5 3 2V12l-4-1-2 3M12.5 12l3.5 2 3-1.5M13 7l-2 4"/>',
+    dumbbell: '<path d="M6 7v10M3.5 9.5v5M18 7v10M20.5 9.5v5M6 12h12"/>',
+    chess: '<path d="M8 21h8M9 18h6l-1-7h-4zM10 11V8h4v3M10 5h4M12 3v2"/>',
+    puzzle: '<path d="M10 4a2 2 0 0 1 4 0v2h4v4h-2a2 2 0 0 0 0 4h2v4h-4v-2a2 2 0 0 0-4 0v2H6v-4h2a2 2 0 0 0 0-4H6V6h4z"/>',
+    briefcase: '<rect x="3" y="7" width="18" height="13" rx="2.5"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 12h18"/>',
+    quote: '<path d="M7 7H4v6h3l-2 4M17 7h-3v6h3l-2 4"/>'
+  };
+  const ICON_LABEL = k => k === "calc" ? "Calculator" : k === "func" ? "Function" : k === "cpu" ? "Chip" : k === "pi" ? "Pi" : k.charAt(0).toUpperCase() + k.slice(1);
+  const initialsOf = name => String(name || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "?";
+  const hashIdx = (s, n) => [...String(s || "")].reduce((a, c) => (a * 31 + c.charCodeAt(0)) >>> 0, 7) % n;
+  // Older profiles stored a character; treat those as initials.
+  function normAv(av, seed) {
+    const a = av && typeof av === "object" ? av : {};
+    const t = a.t === "emoji" && EMOJI_SET.has(a.v) ? "emoji" : a.t === "icon" && ICONS[a.v] ? "icon" : "initials";
+    const c = Number.isInteger(a.c) && a.c >= 0 && a.c < AV_BG.length && a.t ? a.c : hashIdx(seed, AV_BG.length);
+    return { t, v: t === "initials" ? "" : a.v, c };
+  }
+  function avatar(p, cls) {
+    const a = normAv(p && p.avatar, p && (p.id || p.handle || p.display_name));
+    const inner = a.t === "emoji" ? `<span class="nb-avt-e">${a.v}</span>`
+      : a.t === "icon" ? `<svg class="nb-avt-i" viewBox="0 0 24 24" aria-hidden="true">${ICONS[a.v]}</svg>`
+      : `<span class="nb-avt-t">${escH(initialsOf(p && p.display_name))}</span>`;
+    return `<span class="nb-avt${cls ? " " + cls : ""}" style="--av:${AV_BG[a.c][1]}" aria-hidden="true">${inner}</span>`;
   }
 
   /* ---------- badges ---------- */
@@ -241,7 +281,7 @@
 
   /* ---------- page shell ---------- */
   function segs() {
-    const list = [["hood", "The Neighbourhood"], ["messages", "Messages"], ["boards", "Leaderboards"], ["friends", "Friends"], ["profile", "Your neighbour"]];
+    const list = [["hood", "The Neighbourhood"], ["messages", "Messages"], ["boards", "Leaderboards"], ["friends", "Friends"], ["profile", "Profile"]];
     if (S.isAdmin) list.push(["admin", "Badges"]);
     return list;
   }
@@ -251,7 +291,7 @@
     return `<div class="page-head nb-head">
         <div><p class="eyebrow">Community</p><h1 class="page-title">Social</h1>
         <p class="page-sub">Revise alongside your friends. Message them, climb the leaderboards and keep your streaks alive together.</p></div>
-        ${S.profile ? `<div class="nb-me">${badgeRow(S.uid, 4)}<span class="nb-me-av">${avatarSVG(S.profile.avatar)}</span><span><b>${escH(S.profile.display_name)}</b><span>@${escH(S.profile.handle)}</span></span></div>` : ""}
+        ${S.profile ? `<div class="nb-me">${badgeRow(S.uid, 4)}<span class="nb-me-av">${avatar(S.profile)}</span><span><b>${escH(S.profile.display_name)}</b><span>@${escH(S.profile.handle)}</span></span></div>` : ""}
       </div>
       ${withSegs ? `<div class="seg nb-seg" role="tablist" aria-label="Social sections">${segs().map(([id, l]) => `<button type="button" role="tab" data-seg="${id}" aria-selected="${S.seg === id}">${l}${id === "friends" ? count(inc) : id === "messages" ? count(un) : ""}</button>`).join("")}</div>` : ""}
       ${body}`;
@@ -285,19 +325,10 @@
     { id: "study", label: "Study log", icon: "clock", x: -450, z: 1080, go: "#study-log", hue: "#c3d48f" },
     { id: "cards", label: "Flashcards", icon: "cards", x: -150, z: 1140, go: "seg:boards", hue: "#c59bff" },
     { id: "ai", label: "AI tutor", icon: "spark", x: 150, z: 1110, go: "#ai", hue: "#8fe0ff" },
-    { id: "you", label: "Your neighbour", icon: "smile", x: 450, z: 1070, go: "seg:profile", hue: "#ff8fb1" }
-  ];
-  const GUIDES = [
-    { id: "g-hazel", display_name: "Hazel", handle: "guide", avatar: { c: 1, e: 1, m: 0, h: 5 }, guide: true, home: "ai",
-      tips: ["Little and often beats one giant cram.", "Test yourself before you reread anything.", "Blurt a topic, then fill the gaps."] },
-    { id: "g-rowan", display_name: "Rowan", handle: "guide", avatar: { c: 3, e: 0, m: 4, h: 3 }, guide: true, home: "study",
-      tips: ["Phone in another room = twice the focus.", "25 minutes on, 5 off. Repeat.", "Past papers are the best revision there is."] },
-    { id: "g-juniper", display_name: "Juniper", handle: "guide", avatar: { c: 6, e: 3, m: 1, h: 6 }, guide: true, home: "cards",
-      tips: ["Sleep is when memories stick.", "Explain it out loud like you’re the teacher.", "Red topics first. Future you says thanks."] }
+    { id: "you", label: "Profile", icon: "smile", x: 450, z: 1070, go: "seg:profile", hue: "#ff8fb1" }
   ];
   const latestNote = id => S.notes.find(n => n.user_id === id && Date.now() - new Date(n.created_at).getTime() < 48 * 3600e3);
   function homeTile(p) {
-    if (p.guide) return p.home;
     if (p.you) return "you";
     const st = p.stats || {};
     if (unreadFrom(p.id)) return "messages";
@@ -328,7 +359,7 @@
           <button type="button" data-zoom="1" aria-label="Zoom in">+</button>
         </div>
         <button type="button" class="nb-recentre" data-act="recentre" aria-label="Recentre the view" title="Recentre"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></button>
-        ${fr.length ? "" : `<div class="nb-hint"><b>It’s quiet here.</b> Add friends by their @handle and they’ll join the crowd. <button type="button" data-seg="friends">Add friends</button></div>`}
+        ${fr.length ? "" : `<div class="nb-hint"><b>It’s quiet here.</b> Add friends by their @handle and they’ll appear here. <button type="button" data-seg="friends">Add friends</button></div>`}
         <div class="nb-pop" id="nb-pop" hidden></div>
       </div>
 
@@ -336,7 +367,7 @@
         <section class="nb-board">
           <div class="section-head"><h2>Notice board</h2><span class="o-dim">Friends only</span></div>
           <form class="nb-compose" id="nb-compose">
-            <span class="nb-mini">${avatarSVG(me.avatar)}</span>
+            <span class="nb-mini">${avatar(me)}</span>
             <div class="nb-compose-main">
               <textarea id="nb-note" maxlength="140" rows="2" placeholder="Share how revision’s going… (friends only)"></textarea>
               <div class="nb-compose-foot">
@@ -365,7 +396,7 @@
     const p = S.people.get(n.user_id); if (!p) return "";
     const c = S.cheers.get(n.id) || { n: 0, mine: false }, mine = n.user_id === S.uid;
     return `<li class="nb-note" data-note="${n.id}">
-      <span class="nb-mini">${avatarSVG(p.avatar)}</span>
+      <span class="nb-mini">${avatar(p)}</span>
       <div class="nb-note-main">
         <div class="nb-note-head"><b>${escH(p.display_name)}</b>${badgeRow(p.id, 2)}<span>@${escH(p.handle)} · ${ago(n.created_at)}</span>
           ${mine ? `<button type="button" class="nb-x" data-act="del-note" data-id="${n.id}" aria-label="Delete note" title="Delete">×</button>` : ""}</div>
@@ -376,7 +407,7 @@
       </div></li>`;
   }
   const hidden = p => p.share_stats === false || !p.stats;
-  const rankRow = (p, i, val, sub) => `<li class="${p.you ? "me" : ""}${i < 3 ? " podium p" + (i + 1) : ""}"><span class="nb-pos">${i < 3 ? `<i>${i + 1}</i>` : i + 1}</span><span class="nb-mini">${avatarSVG(p.avatar)}</span><span class="nb-who"><b>${escH(p.display_name)}${p.you ? " (you)" : ""}${badgeRow(p.id, 3)}</b><span>${sub != null ? sub : hidden(p) ? "Stats hidden" : `${(p.stats || {}).streak || 0}-day streak`}</span></span><em>${hidden(p) ? "–" : val}</em></li>`;
+  const rankRow = (p, i, val, sub) => `<li class="${p.you ? "me" : ""}${i < 3 ? " podium p" + (i + 1) : ""}"><span class="nb-pos">${i < 3 ? `<i>${i + 1}</i>` : i + 1}</span><span class="nb-mini">${avatar(p)}</span><span class="nb-who"><b>${escH(p.display_name)}${p.you ? " (you)" : ""}${badgeRow(p.id, 3)}</b><span>${sub != null ? sub : hidden(p) ? "Stats hidden" : `${(p.stats || {}).streak || 0}-day streak`}</span></span><em>${hidden(p) ? "–" : val}</em></li>`;
 
   function startPlaza() {
     const wrap = document.getElementById("nb-plaza"), cv = document.getElementById("nb-floor"), world = document.getElementById("nb-world");
@@ -398,7 +429,6 @@
       return o;
     });
     const list = [{ ...S.profile, you: true }, ...friends()];
-    if (list.length < 6) GUIDES.forEach(g => list.push(g));
     const bubbles = document.createElement("div");
     bubbles.className = "nb-bubbles"; wrap.appendChild(bubbles);
     const placed = {};
@@ -408,16 +438,16 @@
       const ang = (k * 2.39996) + (i % 2) * 0.6, rad = 120 + (k % 3) * 34;
       const x = home.x + Math.cos(ang) * rad, z = home.z + Math.sin(ang) * rad * 0.55;
       const el = document.createElement("button");
-      el.type = "button"; el.className = "nb-person" + (p.you ? " you" : "") + (p.guide ? " guide" : "");
+      el.type = "button"; el.className = "nb-person" + (p.you ? " you" : "") + (online(p) && !p.you ? " live" : "");
       el.dataset.id = p.id;
-      el.setAttribute("aria-label", `${p.display_name}${p.you ? " (you)" : p.guide ? " (guide)" : ""}`);
-      const top = !p.guide && badgesOf(p.id)[0];
-      el.innerHTML = `${top ? `<span class="nb-halo">${badgeSVG(top.badge)}</span>` : ""}<span class="nb-body">${avatarSVG(p.avatar)}</span><span class="nb-tag">${online(p) && !p.you ? '<i class="nb-dot"></i>' : ""}${escH(p.you ? "You" : p.display_name)}${p.guide ? "<em>Guide</em>" : ""}</span>`;
+      el.setAttribute("aria-label", `${p.display_name}${p.you ? " (you)" : ""}${online(p) && !p.you ? ", online" : ""}`);
+      const top = badgesOf(p.id)[0];
+      el.innerHTML = `<span class="nb-pin">${avatar(p, "pin")}${top ? `<span class="nb-pin-badge">${badgeSVG(top.badge)}</span>` : ""}${online(p) && !p.you ? '<i class="nb-pin-on"></i>' : ""}</span><span class="nb-tag">${escH(p.you ? "You" : p.display_name)}</span>`;
       world.appendChild(el);
       const bubble = document.createElement("span");
       bubble.className = "nb-bubble"; bubble.hidden = true;
       bubbles.appendChild(bubble);
-      return { p, el, bubble, home, x, z, tx: x, tz: z, dir: 1, walking: false, wait: 800 + Math.random() * 3000, roam: 20000 + Math.random() * 40000 };
+      return { p, el, bubble, home, x, z };
     });
     size();
     P.ro = new ResizeObserver(size); P.ro.observe(wrap);
@@ -453,27 +483,6 @@
     P.zoom += (P.zoomT - P.zoom) * 0.12;
     if (!P.drag) { P.pan += P.panV; P.panV *= 0.9; }
     P.pan = Math.max(-500, Math.min(500, P.pan));
-    const pop = document.getElementById("nb-pop");
-    const held = pop && !pop.hidden ? pop.dataset.id : null;
-    P.actors.forEach(a => {
-      if (still) return;
-      if (held && String(a.p.id) === held) { a.walking = false; a.wait = Math.max(a.wait, 1500); return; }
-      a.roam -= dt;
-      if (a.roam <= 0 && !a.p.you) {
-        const next = P.tiles[Math.floor(Math.random() * P.tiles.length)];
-        a.home = next; a.roam = 30000 + Math.random() * 50000; a.wait = 0;
-        const ang = Math.random() * Math.PI * 2, rad = 100 + Math.random() * 80;
-        a.tx = next.x + Math.cos(ang) * rad; a.tz = next.z + Math.sin(ang) * rad * 0.55;
-      }
-      if (a.wait > 0) {
-        a.wait -= dt;
-        if (a.wait <= 0) { const ang = Math.random() * Math.PI * 2, rad = 100 + Math.random() * 80; a.tx = a.home.x + Math.cos(ang) * rad; a.tz = a.home.z + Math.sin(ang) * rad * 0.55; }
-      } else {
-        const dx = a.tx - a.x, dz = a.tz - a.z, d = Math.hypot(dx, dz), v = 0.11 * dt;
-        if (d < 3) { a.walking = false; a.wait = 3000 + Math.random() * 6000; a.dir = a.home.x > a.x ? 1 : -1; }
-        else { a.x += dx / d * Math.min(v, d); a.z += dz / d * Math.min(v, d); a.walking = true; if (Math.abs(dx) > 1) a.dir = dx > 0 ? 1 : -1; }
-      }
-    });
     draw(t, still);
     P.raf = requestAnimationFrame(frame);
   }
@@ -507,7 +516,7 @@
     });
     const shadow = (x, z, w, a) => { const p = proj(x, z); ctx.save(); ctx.translate(p.sx, p.sy); ctx.scale(1, 0.32); ctx.fillStyle = `rgba(0,0,0,${a})`; ctx.beginPath(); ctx.arc(0, 0, w * p.k, 0, Math.PI * 2); ctx.fill(); ctx.restore(); };
     P.tiles.forEach(tl => shadow(tl.x, tl.z, 62, dk ? .55 : .12));
-    P.actors.forEach(a => shadow(a.x, a.z, 26, dk ? .5 : .16));
+    P.actors.forEach(a => shadow(a.x, a.z, 24, dk ? .45 : .12));
     const vg = ctx.createRadialGradient(W / 2, H * .55, Math.min(W, H) * .35, W / 2, H * .55, Math.max(W, H) * .75);
     vg.addColorStop(0, dk ? "rgba(0,0,0,0)" : "rgba(80,84,70,0)"); vg.addColorStop(1, dk ? "rgba(0,0,0,.55)" : "rgba(80,84,70,.12)");
     ctx.fillStyle = vg; ctx.fillRect(0, 0, W, H);
@@ -521,15 +530,12 @@
     P.actors.forEach(a => {
       const p = proj(a.x, a.z);
       a.el.style.transform = `translate(${p.sx.toFixed(1)}px, ${p.sy.toFixed(1)}px) translate(-50%, -100%) scale(${p.k.toFixed(3)})`;
-      a.el.style.setProperty("--k", p.k.toFixed(3));
-      a.el.style.setProperty("--dir", a.dir);
       a.el.style.zIndex = String(Math.round(5000 - a.z));
-      a.el.classList.toggle("walking", a.walking);
       a.sx = p.sx; a.sy = p.sy; a.k = p.k;
       if (!a.bubble.hidden) {
         const bw = a.bubble.offsetWidth, bh = a.bubble.offsetHeight;
         const bx = Math.min(Math.max(p.sx - bw / 2, 8), P.W - bw - 8);
-        const by = Math.max(8, p.sy - 104 * p.k - (a.el.querySelector(".nb-halo") ? 30 * p.k : 0) - 8 - bh);
+        const by = Math.max(8, p.sy - 98 * p.k - 8 - bh);
         a.bubble.style.transform = `translate(${bx.toFixed(1)}px, ${by.toFixed(1)}px)`;
         a.bubble.style.setProperty("--tail", `${Math.min(Math.max(p.sx - bx, 14), bw - 14).toFixed(0)}px`);
       }
@@ -538,7 +544,7 @@
     if (pop && !pop.hidden && pop.dataset.id) {
       const a = P.actors.find(x => String(x.p.id) === pop.dataset.id);
       if (a) {
-        const pw = pop.offsetWidth, ph = pop.offsetHeight, head = a.sy - 110 * a.k;
+        const pw = pop.offsetWidth, ph = pop.offsetHeight, head = a.sy - 100 * a.k;
         const above = head - ph - 10 >= 10;
         const top = above ? head - ph - 10 : Math.min(a.sy + 12, P.H - ph - 10);
         pop.style.left = `${Math.min(Math.max(a.sx - pw / 2, 10), P.W - pw - 10)}px`;
@@ -574,12 +580,12 @@
   function rotateBubbles() {
     if (!P) return;
     tipIdx++;
-    const talkers = P.actors.filter(a => a.p.guide || latestNote(a.p.id));
+    const talkers = P.actors.filter(a => latestNote(a.p.id));
     const pick = new Set();
     for (let i = 0; i < Math.min(P.W < 640 ? 1 : 3, talkers.length); i++) pick.add(talkers[(tipIdx + i) % talkers.length]);
     P.actors.forEach(a => {
       const b = a.bubble;
-      if (pick.has(a)) { b.textContent = a.p.guide ? a.p.tips[tipIdx % a.p.tips.length] : latestNote(a.p.id).body; b.hidden = false; b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
+      if (pick.has(a)) { b.textContent = latestNote(a.p.id).body; b.hidden = false; b.classList.remove("pop"); void b.offsetWidth; b.classList.add("pop"); }
       else b.hidden = true;
     });
   }
@@ -588,17 +594,16 @@
     const a = P.actors.find(x => String(x.p.id) === String(id)); if (!a) return;
     const p = a.p, st = p.stats || {}, note = latestNote(p.id) || S.notes.find(n => n.user_id === p.id);
     const c = note ? S.cheers.get(note.id) || { n: 0, mine: false } : null;
-    const bs = p.guide ? [] : badgesOf(p.id);
+    const bs = badgesOf(p.id);
     pop.dataset.id = String(p.id);
     pop.innerHTML = `<button type="button" class="nb-pop-x" data-act="close-pop" aria-label="Close">×</button>
-      <div class="nb-pop-top"><span class="nb-pop-av">${avatarSVG(p.avatar)}</span><div><b>${escH(p.display_name)}${p.you ? " (you)" : ""}</b>
-        <span>${p.guide ? "Neighbourhood guide" : "@" + escH(p.handle)}${online(p) && !p.you ? ' · <i class="nb-dot"></i>Online' : ""}</span>
+      <div class="nb-pop-top"><span class="nb-pop-av">${avatar(p)}</span><div><b>${escH(p.display_name)}${p.you ? " (you)" : ""}</b>
+        <span>${"@" + escH(p.handle)}${online(p) && !p.you ? ' · <i class="nb-dot"></i>Online' : ""}</span>
         ${p.status ? `<span class="nb-pop-status">${escH(p.status)}</span>` : ""}</div></div>
       ${bs.length ? `<div class="nb-pop-badges">${bs.map(x => `<span title="${escH(x.note || BADGES[x.badge].desc)}">${badgeSVG(x.badge)}<b>${BADGES[x.badge].name}</b></span>`).join("")}</div>` : ""}
-      ${p.guide ? `<p class="nb-pop-note">Guides keep the plaza lively until your friends move in. Add friends and they’ll join the crowd.</p>`
-        : `${hidden(p) ? `<p class="o-dim o-small">Study stats are hidden.</p>` : `<div class="nb-pop-stats"><div><b>${fmt(st.weekMins || 0)}</b><span>This week</span></div><div><b>${st.streak || 0}</b><span>Day streak</span></div><div><b>${st.cardsWeek || 0}</b><span>Cards this week</span></div></div>`}
+      ${`${hidden(p) ? `<p class="o-dim o-small">Study stats are hidden.</p>` : `<div class="nb-pop-stats"><div><b>${fmt(st.weekMins || 0)}</b><span>This week</span></div><div><b>${st.streak || 0}</b><span>Day streak</span></div><div><b>${st.cardsWeek || 0}</b><span>Cards this week</span></div></div>`}
           ${note ? `<p class="nb-pop-note">“${escH(note.body)}”<span>${ago(note.created_at)}</span></p>` : ""}
-          <div class="nb-pop-act">${p.you ? `<button type="button" class="chip sm" data-seg="profile">Edit your neighbour</button>` : `<button type="button" class="primary" data-act="dm" data-id="${p.id}">Message</button>${note ? `<button type="button" class="nb-cheer${c.mine ? " on" : ""}" data-act="cheer" data-id="${note.id}" aria-pressed="${c.mine}">${c.mine ? "Cheered" : "Cheer"}</button>` : ""}`}</div>`}`;
+          <div class="nb-pop-act">${p.you ? `<button type="button" class="chip sm" data-seg="profile">Edit your profile</button>` : `<button type="button" class="primary" data-act="dm" data-id="${p.id}">Message</button>${note ? `<button type="button" class="nb-cheer${c.mine ? " on" : ""}" data-act="cheer" data-id="${note.id}" aria-pressed="${c.mine}">${c.mine ? "Cheered" : "Cheer"}</button>` : ""}`}</div>`}`;
     pop.hidden = false;
   }
 
@@ -628,13 +633,13 @@
     return `<div class="nb-dm">
       <aside class="nb-dm-list" aria-label="Conversations">
         ${list.map(c => `<button type="button" class="nb-dm-item${c.p.id === S.thread ? " on" : ""}" data-thread="${c.p.id}">
-          <span class="nb-mini">${avatarSVG(c.p.avatar)}${online(c.p) ? '<i class="nb-dot nb-dot-av"></i>' : ""}</span>
+          <span class="nb-mini">${avatar(c.p)}${online(c.p) ? '<i class="nb-dot nb-dot-av"></i>' : ""}</span>
           <span class="nb-who"><b>${escH(c.p.display_name)}${badgeRow(c.p.id, 2)}</b><span>${c.last ? `${c.last.from_id === S.uid ? "You: " : ""}${escH(c.last.body.slice(0, 48))}` : "Say hello"}</span></span>
           <span class="nb-dm-meta">${c.last ? `<span>${ago(c.last.created_at)}</span>` : ""}${c.unread ? `<span class="nb-count">${c.unread}</span>` : ""}</span>
         </button>`).join("")}
       </aside>
       <section class="nb-dm-thread" aria-label="Conversation with ${escH(p.display_name)}">
-        <header class="nb-dm-head"><span class="nb-mini">${avatarSVG(p.avatar)}</span><span class="nb-who"><b>${escH(p.display_name)}${badgeRow(p.id, 3)}</b><span>${online(p) ? '<i class="nb-dot"></i> Online now' : p.last_seen ? `Active ${ago(p.last_seen)}` : "@" + escH(p.handle)}</span></span></header>
+        <header class="nb-dm-head"><span class="nb-mini">${avatar(p)}</span><span class="nb-who"><b>${escH(p.display_name)}${badgeRow(p.id, 3)}</b><span>${online(p) ? '<i class="nb-dot"></i> Online now' : p.last_seen ? `Active ${ago(p.last_seen)}` : "@" + escH(p.handle)}</span></span></header>
         <ol class="nb-dm-msgs" id="nb-dm-msgs">${items || `<li class="nb-dm-empty">This is the start of your conversation with ${escH(p.display_name)}.</li>`}</ol>
         <form class="nb-dm-compose" id="nb-dm-compose"><textarea id="nb-dm-text" rows="1" maxlength="500" placeholder="Message ${escH(p.display_name)}…" aria-label="Message ${escH(p.display_name)}"></textarea><button class="primary" type="submit">Send</button></form>
         <p class="nb-dm-note">Messages are private between you and ${escH(p.display_name)}. Be kind. Removing a friend stops messages.</p>
@@ -671,7 +676,7 @@
       ${board("Study time this week", "From the Study log", p => st(p).weekMins || 0, p => fmt(st(p).weekMins || 0))}
       ${board("Longest streak", "Days in a row with study logged", p => st(p).streak || 0, p => `${st(p).streak || 0}d`, p => hidden(p) ? "Stats hidden" : (st(p).top ? escH(st(p).top) : "–"))}
     </div>
-    <p class="o-dim o-small nb-lb-foot">Leaderboards show you and your friends. Stats update a couple of minutes after you study. Turn sharing off in Your neighbour.</p>`;
+    <p class="o-dim o-small nb-lb-foot">Leaderboards show you and your friends. Stats update a couple of minutes after you study. Turn sharing off in Profile.</p>`;
   }
 
   /* ==========================================================================
@@ -709,7 +714,7 @@
       <section class="o-card nb-flist"><h3>Friends <span class="o-dim">${fr.length}</span></h3>
         ${fr.length ? `<ul class="nb-grid">${fr.map(p => {
           const st = p.stats || {};
-          return `<li class="nb-fcard"><span class="nb-fav">${avatarSVG(p.avatar)}</span><b>${online(p) ? '<i class="nb-dot"></i>' : ""}${escH(p.display_name)}</b><span class="nb-fbadges">${badgeRow(p.id, 6)}</span><span class="o-dim">@${escH(p.handle)}</span>
+          return `<li class="nb-fcard"><span class="nb-fav">${avatar(p)}</span><b>${online(p) ? '<i class="nb-dot"></i>' : ""}${escH(p.display_name)}</b><span class="nb-fbadges">${badgeRow(p.id, 6)}</span><span class="o-dim">@${escH(p.handle)}</span>
             ${p.status ? `<span class="nb-fstatus">${escH(p.status)}</span>` : ""}
             <span class="nb-fstats">${hidden(p) ? "Stats hidden" : `${fmt(st.weekMins || 0)} this week · ${st.streak || 0}-day streak`}</span>
             <button type="button" class="chip sm nb-fmsg" data-act="dm" data-id="${p.id}">Message</button>
@@ -717,53 +722,71 @@
         }).join("")}</ul>` : `<p class="o-dim">No friends yet. Ask yours for their @handle, or send them yours.</p>`}
       </section></div>`;
   }
-  const personRow = (p, actions) => `<li class="nb-row"><span class="nb-mini">${avatarSVG(p.avatar)}</span><span class="nb-who"><b>${escH(p.display_name)}</b><span>@${escH(p.handle)}</span></span><span class="nb-row-act">${actions}</span></li>`;
+  const personRow = (p, actions) => `<li class="nb-row"><span class="nb-mini">${avatar(p)}</span><span class="nb-who"><b>${escH(p.display_name)}</b><span>@${escH(p.handle)}</span></span><span class="nb-row-act">${actions}</span></li>`;
 
   function editorHTML(p, first) {
-    const av = { ...DEFAULT_AV, ...((p && p.avatar) || {}) };
-    S.draft = av;
-    const row = (key, label, items, swatch) => `<div class="nb-opt"><span>${label}</span><div class="nb-opts" data-key="${key}">${items.map((it, i) => swatch
-      ? `<button type="button" class="nb-sw" style="--c:${it}" data-v="${i}" aria-pressed="${av[key] === i}" aria-label="Colour ${i + 1}"></button>`
-      : `<button type="button" class="chip sm" data-v="${i}" aria-pressed="${av[key] === i}">${it}</button>`).join("")}</div></div>`;
+    const name0 = p ? p.display_name : (S.me.name || "").split(" ")[0];
+    const av = normAv(p && p.avatar, p ? p.id : S.uid);
+    S.draft = { ...av, v: av.v || (av.t === "emoji" ? "📚" : av.t === "icon" ? "book" : "") };
     const mine = p ? badgesOf(p.id) : [];
     return `<form class="nb-editor" novalidate>
-      <div class="nb-ed-preview"><div class="nb-ed-stage">${avatarSVG(av, "big")}</div><button type="button" class="chip sm" data-act="shuffle">Shuffle</button>
+      <div class="nb-ed-preview"><div class="nb-ed-stage">${avatar({ avatar: S.draft, display_name: name0, id: S.uid }, "xl")}</div>
+        <span class="o-dim o-small nb-ed-cap">How friends see you</span>
         ${mine.length ? `<div class="nb-ed-badges">${mine.map(x => `<span title="${escH(x.note || BADGES[x.badge].desc)}">${badgeSVG(x.badge, "md")}<b>${BADGES[x.badge].name}</b></span>`).join("")}</div>` : ""}</div>
       <div class="nb-ed-form">
         <div class="nb-ed-fields">
-          <label class="field"><span>Name your friends see</span><input class="input" name="name" maxlength="40" required value="${escH(p ? p.display_name : (S.me.name || "").split(" ")[0])}"></label>
+          <label class="field"><span>Display name</span><input class="input" name="name" maxlength="40" required value="${escH(name0)}"></label>
           <label class="field"><span>Handle</span><div class="nb-hwrap"><span>@</span><input class="input" name="handle" maxlength="20" required pattern="[a-z0-9_]{3,20}" autocapitalize="none" spellcheck="false" value="${escH(p ? p.handle : suggestHandle())}"></div></label>
-          <label class="field nb-wide"><span>Status <em class="o-dim">optional</em></span><input class="input" name="status" maxlength="80" placeholder="e.g. Grinding through Chemistry Paper 1" value="${escH(p && p.status || "")}"></label>
+          <label class="field nb-wide"><span>Status <em class="o-dim">optional</em></span><input class="input" name="status" maxlength="80" placeholder="e.g. Working through Chemistry Paper 1" value="${escH(p && p.status || "")}"></label>
         </div>
-        ${row("c", "Colour", COLOURS, true)}${row("e", "Eyes", EYES)}${row("m", "Mouth", MOUTHS)}${row("h", "Extra", HATS)}
+        <div class="nb-pick">
+          <div class="nb-pick-head"><span>Profile picture</span>
+            <div class="nb-kind" role="tablist" aria-label="Picture type">${[["initials", "Initials"], ["emoji", "Emoji"], ["icon", "Icon"]].map(([k, l]) => `<button type="button" role="tab" data-kind="${k}" aria-selected="${S.draft.t === k}">${l}</button>`).join("")}</div></div>
+          <div class="nb-pick-body" data-kind-body="emoji" ${S.draft.t === "emoji" ? "" : "hidden"}>
+            ${EMOJI.map(([g, list]) => `<div class="nb-pick-group"><span>${g}</span><div class="nb-grid-e">${list.map(e => `<button type="button" data-emoji="${e}" aria-pressed="${S.draft.t === "emoji" && S.draft.v === e}" aria-label="${g} ${e}">${e}</button>`).join("")}</div></div>`).join("")}
+          </div>
+          <div class="nb-pick-body" data-kind-body="icon" ${S.draft.t === "icon" ? "" : "hidden"}>
+            <div class="nb-grid-i">${Object.keys(ICONS).map(k => `<button type="button" data-icon="${k}" aria-pressed="${S.draft.t === "icon" && S.draft.v === k}" title="${ICON_LABEL(k)}" aria-label="${ICON_LABEL(k)}"><svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[k]}</svg></button>`).join("")}</div>
+          </div>
+          <div class="nb-pick-body" data-kind-body="initials" ${S.draft.t === "initials" ? "" : "hidden"}><p class="o-dim o-small">Your initials, taken from your display name.</p></div>
+          <div class="nb-opt"><span>Background</span><div class="nb-opts">${AV_BG.map(([n, c], i) => `<button type="button" class="nb-sw" style="--c:${c}" data-bg="${i}" aria-pressed="${S.draft.c === i}" aria-label="${n}" title="${n}"></button>`).join("")}</div></div>
+        </div>
         <label class="nb-toggle"><input type="checkbox" name="share" ${!p || p.share_stats ? "checked" : ""}><span><b>Share my study stats with friends</b><span class="o-dim">Time this week, streak, top subject and flashcard counts. Never your notes, grades or ratings.</span></span></label>
         <p class="acct-err nb-err" role="alert"></p>
-        <div class="nb-ed-actions"><button class="primary" type="submit">${first ? "Move in" : "Save changes"}</button></div>
+        <div class="nb-ed-actions"><button class="primary" type="submit">${first ? "Join" : "Save changes"}</button></div>
       </div></form>`;
   }
-  function suggestHandle() { return ((S.me.name || "neighbour").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 14) || "neighbour") + Math.floor(Math.random() * 90 + 10); }
-  function profileHTML() { return `<section class="o-card nb-profile"><h3>Your neighbour</h3>${editorHTML(S.profile)}</section>`; }
+  function suggestHandle() { return ((S.me.name || "student").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 14) || "student") + Math.floor(Math.random() * 90 + 10); }
+  function profileHTML() { return `<section class="o-card nb-profile"><h3>Profile</h3>${editorHTML(S.profile)}</section>`; }
   function renderOnboarding() {
     root.innerHTML = shell(`<div class="nb-welcome">
       <div class="nb-welcome-art"><div class="nb-welcome-grid"></div>
         ${TILES.slice(0, 6).map((t, i) => `<span class="nb-tile nb-tile-static" style="--hue:${t.hue};left:${[14, 38, 62, 86, 26, 74][i]}%;top:${[28, 20, 20, 28, 58, 58][i]}%"><span class="nb-tile-face">${icon(t.icon, "nb-tile-ico")}<span class="nb-tile-shine"></span></span></span>`).join("")}
-        ${GUIDES.map((g, i) => `<span class="nb-person nb-static" style="left:${[20, 50, 80][i]}%;top:${[94, 90, 94][i]}%"><span class="nb-body">${avatarSVG(g.avatar)}</span><span class="nb-tag">${g.display_name}<em>Guide</em></span></span>`).join("")}
       </div>
-      <section class="o-card nb-welcome-card"><h2>Move into The Neighbourhood</h2>
-        <p class="o-dim">Make your neighbour, pick a handle and you’re in. Friends add you by your handle, and only friends can see what you share or message you.</p>
+      <section class="o-card nb-welcome-card"><h2>Join The Neighbourhood</h2>
+        <p class="o-dim">Choose a display name, a handle and a profile picture. Friends add you by your handle, and only friends can see what you share or message you.</p>
         ${editorHTML(null, true)}</section></div>`);
     wireEditor(root.querySelector(".nb-editor"), true);
   }
-  const rnd = n => Math.floor(Math.random() * n);
   function wireEditor(form, first) {
     if (!form) return;
     const prev = form.querySelector(".nb-ed-stage");
-    const redraw = () => { prev.innerHTML = avatarSVG(S.draft, "big"); form.querySelectorAll(".nb-opts").forEach(g => g.querySelectorAll("[data-v]").forEach(b => b.setAttribute("aria-pressed", String(S.draft[g.dataset.key] === +b.dataset.v)))); };
+    const redraw = () => {
+      prev.innerHTML = avatar({ avatar: S.draft, display_name: form.name.value || "?", id: S.uid }, "xl");
+      form.querySelectorAll("[data-kind]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.kind === S.draft.t)));
+      form.querySelectorAll("[data-kind-body]").forEach(d => (d.hidden = d.dataset.kindBody !== S.draft.t));
+      form.querySelectorAll("[data-emoji]").forEach(b => b.setAttribute("aria-pressed", String(S.draft.t === "emoji" && b.dataset.emoji === S.draft.v)));
+      form.querySelectorAll("[data-icon]").forEach(b => b.setAttribute("aria-pressed", String(S.draft.t === "icon" && b.dataset.icon === S.draft.v)));
+      form.querySelectorAll("[data-bg]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.bg === S.draft.c)));
+    };
     form.addEventListener("click", e => {
-      const b = e.target.closest(".nb-opts [data-v]");
-      if (b) { S.draft[b.closest(".nb-opts").dataset.key] = +b.dataset.v; redraw(); return; }
-      if (e.target.closest('[data-act="shuffle"]')) { S.draft = { c: rnd(COLOURS.length), e: rnd(EYES.length), m: rnd(MOUTHS.length), h: rnd(HATS.length) }; redraw(); }
+      const k = e.target.closest("[data-kind]");
+      if (k) { const t = k.dataset.kind; S.draft.t = t; S.draft.v = t === "emoji" ? (EMOJI_SET.has(S.draft.v) ? S.draft.v : "📚") : t === "icon" ? (ICONS[S.draft.v] ? S.draft.v : "book") : ""; redraw(); return; }
+      const em = e.target.closest("[data-emoji]"); if (em) { S.draft.t = "emoji"; S.draft.v = em.dataset.emoji; redraw(); return; }
+      const ic = e.target.closest("[data-icon]"); if (ic) { S.draft.t = "icon"; S.draft.v = ic.dataset.icon; redraw(); return; }
+      const bg = e.target.closest("[data-bg]"); if (bg) { S.draft.c = +bg.dataset.bg; redraw(); }
     });
+    form.name.addEventListener("input", () => { if (S.draft.t === "initials") redraw(); });
     const hin = form.handle;
     hin.addEventListener("input", () => { const v = hin.value.toLowerCase().replace(/[^a-z0-9_]/g, ""); if (v !== hin.value) hin.value = v; });
     form.addEventListener("submit", async e => {
@@ -773,14 +796,14 @@
       const name = form.name.value.trim().replace(/\s+/g, " ").slice(0, 40), handle = form.handle.value.trim().toLowerCase();
       if (!name) { err.textContent = "Add a name."; return; }
       if (!/^[a-z0-9_]{3,20}$/.test(handle)) { err.textContent = "Handles are 3–20 characters: lowercase letters, numbers and _."; return; }
-      const row = { id: S.uid, display_name: name, handle, avatar: S.draft, status: form.status.value.trim().slice(0, 80) || null, share_stats: form.share.checked };
+      const row = { id: S.uid, display_name: name, handle, avatar: { t: S.draft.t, v: S.draft.t === "initials" ? "" : S.draft.v, c: S.draft.c }, status: form.status.value.trim().slice(0, 80) || null, share_stats: form.share.checked };
       row.stats = row.share_stats ? myStats() : null;
       row.last_seen = new Date().toISOString();
       btn.disabled = true;
       const r = first ? await sb.from("profiles").insert(row) : await sb.from("profiles").update(row).eq("id", S.uid);
       btn.disabled = false;
       if (r.error) { err.textContent = /duplicate|unique/i.test(r.error.message) ? `@${handle} is taken. Try another.` : r.error.message; return; }
-      say(first ? "Welcome to the neighbourhood!" : "Saved.");
+      say(first ? "Welcome to The Neighbourhood." : "Saved.");
       if (first) S.seg = "hood";
       S.sig = ""; await load();
     });
@@ -932,6 +955,6 @@
 
   window.orchardSocial = {
     badge: () => { if (!S.profile) return ""; const n = incoming().length + unreadFrom(); return n ? String(n) : ""; },
-    avatarSVG, badgeSVG
+    avatar, badgeSVG
   };
 })();

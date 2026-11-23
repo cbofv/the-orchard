@@ -85,13 +85,13 @@ retries on another Claude model (Anthropic's "fallbacks" feature).
 ## Social (optional)
 
 The **Social** tab lets friends revise together:
-- **The Neighbourhood**: a 3D plaza where glossy tiles float above a grid floor and you and your friends gather around them, with the latest notes in speech bubbles. Drag to look around and zoom with the − / + controls. Click a tile to open that section, or click a person to see their week, badges and latest note, then message or cheer them. Until friends join, three guides (Hazel, Rowan and Juniper) share study tips.
+- **The Neighbourhood**: a 3D plaza where glossy tiles float above a grid floor and you and your friends appear as profile pins around them, with the latest notes in speech bubbles. Drag to look around and zoom with the − / + controls. Click a tile to open that section, or click a person to see their week, badges and latest note, then message or cheer them.
 - **Messages**: private one-to-one chats between friends, with unread counts and "Seen".
 - **Leaderboards**: flashcards reviewed this week, cards mastered, study time and streaks, for you and your friends.
 - **Notice board**: short friends-only posts with cheers.
 - **Friends**: add people by their exact @handle, then accept or decline requests.
-- **Your neighbour**: build your character and choose your name, handle, status and whether to share stats.
-- **Badges** (admins only): give Crown, Diamond, Star, Laurel, Flame and Heart badges with a note, or take them back. Badges show next to names, and someone's top badge floats above their head in the plaza.
+- **Profile**: choose your display name, handle and status, plus a profile picture: your initials, one of about 90 emoji or one of 48 line icons, on one of 12 background colours.
+- **Badges** (admins only): give Crown, Diamond, Star, Laurel, Flame and Heart badges with a note, or take them back. Badges show next to names, and someone's top badge sits on their profile pin in the plaza.
 
 **Privacy:** nothing is public. People can only find you by typing your exact handle. Only accepted friends see your notes, stats, badges or online status, and only friends can message you. Shared stats are study time, streak, top subject and flashcard counts, never grades or ratings.
 
