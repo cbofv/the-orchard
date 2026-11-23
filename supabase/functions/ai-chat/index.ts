@@ -49,6 +49,12 @@ function contextNote(ctx: Record<string, unknown> | undefined, name: string) {
   if (subjects.length) lines.push(`Their subjects: ${subjects.join(", ")}.`);
   const exams = Array.isArray(ctx?.exams) ? ctx!.exams.slice(0, 8).map((s) => clean(s, 120)).filter(Boolean) : [];
   if (exams.length) lines.push(`Their next exams: ${exams.join("; ")}.`);
+  const weak = Array.isArray(ctx?.weak) ? ctx!.weak.slice(0, 12).map((s) => clean(s, 140)).filter(Boolean) : [];
+  if (weak.length) lines.push(`Topics they have rated as weak (focus help here when relevant): ${weak.join("; ")}.`);
+  const recent = clean(ctx?.recent, 300);
+  if (recent) lines.push(`Study logged in the last 7 days: ${recent}.`);
+  const due = Number(ctx?.due);
+  if (Number.isFinite(due) && due > 0) lines.push(`They have ${Math.min(due, 9999)} flashcards due for review.`);
   const today = clean(ctx?.today, 20);
   if (today) lines.push(`Today's date is ${today}.`);
   return lines.join("\n");

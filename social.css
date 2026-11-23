@@ -372,3 +372,69 @@
 #o .nb-opt { grid-template-columns: 90px 1fr; }
 /* Admin badge: olive coin */
 #o .nb-b-admin circle:first-of-type { fill: #10140b; }
+
+/* ---------- study rooms ---------- */
+#o .nb-live-inline { display: inline-block; width: 7px; height: 7px; margin-left: 4px; vertical-align: 2px; animation: nb-pulse 1.6s ease-in-out infinite; }
+@keyframes nb-pulse { 50% { opacity: .35; } }
+#o .nb-rooms { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); max-width: 1300px; }
+@media (min-width: 1100px) { #o .nb-rooms { grid-template-columns: 420px minmax(0, 1fr); align-items: start; } }
+#o .nb-room-form { display: grid; gap: 14px; margin-top: 12px; }
+#o .nb-room-form .field { margin: 0; }
+#o .nb-room-form .chips { flex-wrap: wrap; }
+#o .nb-room-form .primary { justify-self: start; }
+#o .nb-room-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+#o .nb-room-item { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; border: 1px solid var(--o-border); background: var(--o-sunken); }
+#o .nb-room-ico { width: 40px; height: 40px; flex: none; display: grid; place-items: center; border-radius: 11px; background: color-mix(in srgb, var(--acc) 14%, var(--o-surface)); border: 1px solid color-mix(in srgb, var(--acc) 30%, transparent); }
+#o .nb-room-ico svg { width: 20px; height: 20px; fill: none; stroke: var(--acc); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#o .nb-run { color: var(--acc); font-weight: 600; font-variant-numeric: tabular-nums; }
+#o .nb-stack { display: flex; align-items: center; }
+#o .nb-stack .nb-mini { width: 28px; margin-left: -8px; border-radius: 50%; box-shadow: 0 0 0 2px var(--o-sunken); }
+#o .nb-stack .nb-mini:first-child { margin-left: 0; }
+#o .nb-stack em { margin-left: 6px; font-style: normal; font-size: .76rem; color: var(--ink-faint); }
+#o .nb-room { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); max-width: 1300px; }
+@media (min-width: 1100px) { #o .nb-room { grid-template-columns: minmax(0, 1fr) 360px; align-items: start; } }
+#o .nb-room-main { display: grid; gap: 20px; justify-items: center; padding: 20px 24px 22px; }
+#o .nb-room-head { justify-self: stretch; display: flex; align-items: center; gap: 14px; }
+#o .nb-room-head h3 { margin: 0; font-size: 1.1rem; }
+#o .nb-room-head p { margin: 2px 0 0; }
+#o .nb-clock { --p: 0; position: relative; width: min(340px, 70vw); aspect-ratio: 1; }
+#o .nb-clock svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+#o .nb-clock-bg { fill: none; stroke: var(--o-sunken); stroke-width: 10; }
+#o .nb-clock-fg { fill: none; stroke: var(--acc); stroke-width: 10; stroke-linecap: round; stroke-dasharray: calc(var(--p) * 1) 100; transition: stroke-dasharray 1s linear; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--acc) 45%, transparent)); }
+#o .nb-clock:not(.running):not(.done) .nb-clock-fg { opacity: 0; }
+#o .nb-clock-c { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+#o .nb-clock-c b { font: 600 clamp(2.6rem, 6vw, 4rem)/1 var(--display); letter-spacing: -.04em; font-variant-numeric: tabular-nums; }
+#o .nb-clock-c span { margin-top: 8px; font-size: .9rem; color: var(--ink-soft); }
+#o .nb-clock.done .nb-clock-c span { color: var(--acc); font-weight: 600; }
+#o .nb-room-ctl { display: grid; justify-items: center; gap: 12px; }
+#o .nb-room-ctl .chips { justify-content: center; }
+#o .nb-room-foot { justify-self: stretch; display: flex; justify-content: space-between; align-items: flex-end; gap: 12px; flex-wrap: wrap; padding-top: 16px; border-top: 1px solid var(--o-border); }
+#o .nb-sel { display: grid; gap: 6px; font-size: .8rem; font-weight: 500; color: var(--ink-soft); }
+#o .nb-sel select { min-width: 200px; }
+
+/* ---------- admin dashboard ---------- */
+#o .nb-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+#o .nb-stat { padding: 14px 16px; border-radius: 12px; background: var(--o-sunken); border: 1px solid var(--o-border); display: grid; gap: 2px; }
+#o .nb-stat b { font: 600 1.5rem var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+#o .nb-stat span { font-size: .78rem; color: var(--ink-faint); }
+#o .nb-ann { display: grid; gap: 10px; margin: 12px 0 4px; }
+#o .nb-ann textarea { resize: vertical; min-height: 64px; }
+#o .nb-ann-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+#o .nb-ann-row .nb-sel select { min-width: 160px; }
+#o .nb-ann-dot { width: 10px; height: 10px; border-radius: 50%; flex: none; background: var(--acc); }
+#o .nb-ann-dot.good { background: #45c86a; } #o .nb-ann-dot.warn { background: #e9a23b; }
+#o .nb-wrap { white-space: normal !important; }
+#o .nb-left-act { margin-left: 0; margin-top: 10px; }
+#o .nb-notify { margin-top: 16px; max-width: 1200px; }
+
+/* ---------- announcement banner (every page) ---------- */
+#o .o-announce { display: flex; align-items: center; gap: 12px; margin: 20px 0 0; padding: 12px 14px 12px 16px; border-radius: 12px; border: 1px solid color-mix(in srgb, var(--acc) 40%, transparent); background: color-mix(in srgb, var(--acc) 10%, var(--o-surface)); box-shadow: var(--o-shadow-sm); }
+#o .o-announce.good { border-color: rgb(69 200 106 / .45); background: color-mix(in srgb, #45c86a 10%, var(--o-surface)); }
+#o .o-announce.warn { border-color: rgb(233 162 59 / .55); background: color-mix(in srgb, #e9a23b 12%, var(--o-surface)); }
+#o .o-announce p { margin: 0; flex: 1; font-size: .92rem; font-weight: 500; }
+#o .o-ann-ico { width: 32px; height: 32px; flex: none; display: grid; place-items: center; border-radius: 9px; background: color-mix(in srgb, var(--acc) 22%, transparent); }
+#o .o-ann-ico svg { width: 18px; height: 18px; fill: none; stroke: var(--acc); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+#o .o-ann-meta { font-size: .76rem; color: var(--ink-faint); white-space: nowrap; }
+#o .o-announce button { width: 28px; height: 28px; border: 0; border-radius: 7px; background: none; color: var(--ink-faint); font-size: 1.15rem; cursor: pointer; }
+#o .o-announce button:hover { background: var(--o-hover); color: var(--ink); }
+@media (max-width: 640px) { #o .o-ann-meta { display: none; } }

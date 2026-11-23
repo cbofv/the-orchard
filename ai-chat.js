@@ -99,6 +99,23 @@
           .map(e => `${e.date}${e.time ? " " + e.time : ""} ${e.title || e.subject || "Exam"}`);
       }
     } catch (e) {}
+    // What the tutor should know about where you are
+    try {
+      if (typeof ALL_SUBS !== "undefined" && typeof syl !== "undefined") {
+        const rank = { red: 0, amber: 1 };
+        ctx.weak = ALL_SUBS.filter(s => rank[syl.ratings[s.key]] !== undefined)
+          .sort((a, b) => rank[syl.ratings[a.key]] - rank[syl.ratings[b.key]])
+          .slice(0, 12).map(s => `${s.topic.def.subject}: ${s.name} (${s.topic.name}) – ${syl.ratings[s.key] === "red" ? "struggling" : "getting there"}`);
+      }
+      if (typeof store !== "undefined") {
+        const wk = new Date(); wk.setDate(wk.getDate() - 6);
+        const since = `${wk.getFullYear()}-${String(wk.getMonth() + 1).padStart(2, "0")}-${String(wk.getDate()).padStart(2, "0")}`;
+        const by = {};
+        store.sessions.filter(s => s.date >= since).forEach(s => (by[s.subject] = (by[s.subject] || 0) + (+s.minutes || 0)));
+        ctx.recent = Object.entries(by).sort((a, b) => b[1] - a[1]).map(([s, m]) => `${s} ${m} min`).join(", ");
+      }
+      if (typeof deckCards === "function" && typeof isDueCard === "function") ctx.due = deckCards("all:").filter(c => isDueCard(c)).length;
+    } catch (e) {}
     return ctx;
   }
 
@@ -182,4 +199,9 @@
 
   render();
   initStore();
+  // Lets other pages open the tutor with a question already asked
+  window.orchardAsk = text => {
+    location.hash = "#ai";
+    setTimeout(() => { if (busy) { input.value = text; grow(); input.focus(); } else ask(text); }, 80);
+  };
 })();

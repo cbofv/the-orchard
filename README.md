@@ -104,6 +104,23 @@ The **Social** tab lets friends revise together:
    ```
    Then reload the site. A **Badges** tab appears in Social.
 4. Run [`supabase-social-3.sql`](supabase-social-3.sql) the same way, so everyone sees the **Admin** badge (The Orchard logo) next to admins' names.
+5. Run [`supabase-social-4.sql`](supabase-social-4.sql) for **study rooms**, **announcements** and the **admin overview**.
+
+### More in Social
+- **Study rooms**: open a room, and friends can see and join it. When you press Start, everyone gets the same countdown, and when it ends the time is logged to each person's Study log.
+- **Admin tab** (admins only): an overview of accounts and activity, **announcements** shown as a banner at the top of the site for everyone (with an end date), and badges.
+- **Notifications**: turn them on in Social → Profile. You get alerts for new messages, friend requests, badges and friends' study rooms while The Orchard is open in a tab or installed as an app. The tab title and icon also show a count.
+
+## Install as an app
+The Orchard can be installed on phones and computers. On desktop Chrome or Edge, click the **download icon** in the top bar (or **Install app** in the footer). On iPhone or iPad, tap **Share → Add to Home Screen**. It opens in its own window, and the main pages still load when you're offline.
+
+## Planning and recap
+- **What should I do now? → Plan my day**: choose 1 to 4 hours and get a set of focused sessions across subjects, chosen by exam dates and weak topics, with breaks. **Start** runs the focus timer (which logs the session), and **Add to calendar** saves the plan.
+- **Weekly recap**: shown on Home from Monday to Wednesday (or from **Weekly recap** next to Insights). It covers time studied versus the week before, days studied, flashcards reviewed, where your time went, your rank among friends and what's coming up.
+
+## AI tutor knows where you are
+The tutor now sees your weakest-rated topics, last week's study and how many flashcards are due, so its help is personal. Every subtopic page has **Explain this**, **Quiz me on it** and **Exam question** buttons that open the tutor with the question ready.
+After updating the code, **redeploy the `ai-chat` Edge Function** in Supabase (Edge Functions → ai-chat → edit, paste the new [`supabase/functions/ai-chat/index.ts`](supabase/functions/ai-chat/index.ts), Deploy) so it uses this information.
 
 ## Files
 | File | What it is |
@@ -122,4 +139,6 @@ The **Social** tab lets friends revise together:
 | `supabase-social-setup.sql` | Run once for Social: profiles, friends, notes and their privacy rules |
 | `supabase-social-2.sql` | Run once more for Social: messages, admins and badges |
 | `supabase-social-3.sql` | Lets everyone see who the admins are, for the Admin badge |
+| `supabase-social-4.sql` | Study rooms, announcements and admin stats |
+| `manifest.webmanifest`, `sw.js`, `icon-*.png` | Installable app: manifest, offline support and icons |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |

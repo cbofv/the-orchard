@@ -359,3 +359,217 @@ const O_SUBJECT_COLOURS = {
     if (def) renderRail(def);
   });
 })();
+
+/* ==========================================================================
+   Installable app: service worker + Install button
+   ========================================================================== */
+(function installable() {
+  "use strict";
+  if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("sw.js").catch(() => {}));
+  let deferred = null;
+  const dock = document.querySelector(".dock"), foot = document.querySelector(".o-foot .o-foot-r");
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "icon-btn o-install"; btn.hidden = true;
+  btn.title = "Install The Orchard as an app"; btn.setAttribute("aria-label", "Install The Orchard as an app");
+  btn.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 19h14"/></svg>';
+  if (dock) dock.insertBefore(btn, dock.querySelector("#focus-btn") || null);
+  const link = document.createElement("button");
+  link.type = "button"; link.textContent = "Install app"; link.hidden = true;
+  if (foot) foot.insertBefore(link, foot.firstChild);
+  const standalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+  addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferred = e; if (!standalone()) { btn.hidden = false; link.hidden = false; } });
+  async function install() {
+    if (deferred) { deferred.prompt(); const r = await deferred.userChoice.catch(() => null); deferred = null; btn.hidden = link.hidden = true; if (r && r.outcome === "accepted" && typeof toast === "function") toast("Installed. Find The Orchard with your other apps."); return; }
+    if (typeof toast === "function") toast(/iPhone|iPad/.test(navigator.userAgent) ? "On iPhone or iPad: tap Share, then Add to Home Screen." : "Use your browser menu and choose Install or Add to Home Screen.");
+  }
+  btn.addEventListener("click", install); link.addEventListener("click", install);
+  // iPhone/iPad never fire beforeinstallprompt, so offer the instructions there
+  if (/iPhone|iPad/.test(navigator.userAgent) && !standalone()) link.hidden = false;
+  addEventListener("appinstalled", () => { btn.hidden = link.hidden = true; });
+})();
+
+/* ==========================================================================
+   Plan my day: several focused sessions across subjects, in the
+   "What should I do now?" sheet
+   ========================================================================== */
+(function dayPlan() {
+  "use strict";
+  if (typeof renderNow !== "function" || typeof subjectScores !== "function") return;
+  const sheet = document.getElementById("now-sheet"); if (!sheet) return;
+  const escH = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const len = sheet.querySelector(".now-len");
+  let mode = "now", hours = 2, plan = null;
+  len.insertAdjacentHTML("beforebegin", `<div class="o-now-mode" role="tablist" aria-label="Plan type"><button type="button" role="tab" data-nowmode="now" aria-selected="true">Next session</button><button type="button" role="tab" data-nowmode="day" aria-selected="false">Plan my day</button></div>`);
+  len.insertAdjacentHTML("afterend", `<div class="now-len o-day-len" hidden><span>How much time today?</span><div class="chips">${[1, 2, 3, 4].map(h => `<button type="button" class="chip" data-dayhours="${h}">${h} hour${h > 1 ? "s" : ""}</button>`).join("")}</div></div>`);
+  const dayLen = sheet.querySelector(".o-day-len");
+  const hhmm = d => d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  function build() {
+    const total = hours * 60, ranked = subjectScores();
+    if (!ranked.length) return null;
+    const slot = hours === 1 ? 25 : 45, brk = hours === 1 ? 5 : 10;
+    const blocks = [];
+    let due = 0;
+    try { if (typeof deckCards === "function") due = deckCards("all:").filter(c => isDueCard(c)).length; } catch (e) {}
+    let used = 0;
+    if (due && total >= 90) { blocks.push({ kind: "cards", min: 15, title: `Flashcard review: ${due} due`, sub: "All subjects. Quick recall to warm up.", subject: null }); used += 15 + 5; blocks.push({ kind: "break", min: 5 }); }
+    let i = 0;
+    while (used + slot <= total) {
+      const r = ranked[i % ranked.length], s = pickSub(r.def);
+      const why = [r.ex ? `${r.ex.paper} in ${r.days} day${r.days === 1 ? "" : "s"}` : null, r.c.rated ? `${r.c.score}% confident` : "not rated yet", r.since === null ? "not studied yet" : r.since > 6 ? `last studied ${r.since} days ago` : null].filter(Boolean).join(" · ");
+      blocks.push({ kind: "focus", min: slot, title: `${r.def.title}: ${s.name}`, sub: `${s.topic.name}${why ? " · " + why : ""}`, subject: r.def.subject, topic: s.name, key: s.key, view: r.def.view });
+      used += slot; i++;
+      if (used + brk + 15 <= total) { blocks.push({ kind: "break", min: brk }); used += brk; } else break;
+    }
+    const rest = total - used;
+    if (rest >= 10 && blocks[blocks.length - 1].kind !== "cards") blocks.push({ kind: "cards", min: Math.min(rest, 20), title: "Lock it in: flashcards", sub: "Review what’s due, then rate today’s topics red, amber or green.", subject: null });
+    let t = new Date(); t.setMinutes(Math.ceil(t.getMinutes() / 5) * 5, 0, 0);
+    blocks.forEach(b => { b.from = new Date(t); t = new Date(t.getTime() + b.min * 60000); b.to = new Date(t); });
+    return blocks;
+  }
+  function renderDay() {
+    plan = build();
+    const body = document.getElementById("now-body");
+    dayLen.querySelectorAll("[data-dayhours]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.dayhours === hours)));
+    if (!plan) { body.innerHTML = '<p class="empty">Add a subject to get started.</p>'; return; }
+    const focus = plan.filter(b => b.kind === "focus");
+    body.innerHTML = `<p class="o-day-sum">${focus.length} focus session${focus.length === 1 ? "" : "s"} across ${new Set(focus.map(b => b.subject)).size} subject${new Set(focus.map(b => b.subject)).size === 1 ? "" : "s"}, chosen by how close your exams are and which topics need the most work.</p>
+      <ol class="o-day">${plan.map((b, i) => b.kind === "break"
+        ? `<li class="o-day-break"><span>${hhmm(b.from)}</span><em>${b.min}-minute break: away from screens</em></li>`
+        : `<li class="o-day-item ${b.kind}"><span class="o-day-time">${hhmm(b.from)}<small>${b.min} min</small></span>
+            <div class="o-day-main"><b>${escH(b.title)}</b><span>${escH(b.sub)}</span></div>
+            <span class="o-day-act">${b.key ? `<button type="button" class="chip sm" data-dayopen="${i}">Open</button>` : ""}<button type="button" class="${i === plan.findIndex(x => x.kind !== "break") ? "primary" : "chip sm"}" data-daystart="${i}">Start</button></span></li>`).join("")}</ol>
+      ${(() => { const end = plan[plan.length - 1].to, h = end.getHours() + end.getMinutes() / 60; return h >= 22.5 || h < 5 ? `<p class="o-day-late">This runs late. A shorter plan and a proper night’s sleep will help your memory more than extra hours now.</p>` : ""; })()}
+      <div class="now-foot"><p class="muted">Finishes about ${hhmm(plan[plan.length - 1].to)}. Start each block when you’re ready; the timer logs it for you.</p>
+        <button type="button" class="chip" data-dayadd>Add to calendar</button></div>`;
+  }
+  function setMode(m) {
+    mode = m;
+    sheet.querySelectorAll("[data-nowmode]").forEach(b => b.setAttribute("aria-selected", String(b.dataset.nowmode === m)));
+    len.hidden = m === "day"; dayLen.hidden = m !== "day";
+    if (m === "day") renderDay(); else renderNow();
+  }
+  sheet.addEventListener("click", e => {
+    const mb = e.target.closest("[data-nowmode]"); if (mb) { setMode(mb.dataset.nowmode); return; }
+    const hb = e.target.closest("[data-dayhours]"); if (hb) { hours = +hb.dataset.dayhours; renderDay(); return; }
+    const sb = e.target.closest("[data-daystart]");
+    if (sb && plan) {
+      const b = plan[+sb.dataset.daystart];
+      if (b.kind === "cards") { closeNow(); if (typeof startStudy === "function") startStudy("all:", "cards", "due"); return; }
+      if (ft.phase !== "idle" && !confirm("A focus timer is already running. Replace it?")) return;
+      ft.subject = b.subject; ft.topic = b.topic; ft.len = b.min; ftSave(); ftStart("focus");
+      closeNow(); if (typeof openFocus === "function") openFocus();
+      if (typeof toast === "function") toast(`Focus started: ${b.min} minutes of ${b.subject}.`);
+      return;
+    }
+    const ob = e.target.closest("[data-dayopen]");
+    if (ob && plan) { const b = plan[+ob.dataset.dayopen]; closeNow(); if (typeof goToSub === "function") goToSub(b.key); return; }
+    if (e.target.closest("[data-dayadd]") && plan && typeof addEvent === "function") {
+      const d = new Date(), date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      plan.filter(b => b.kind === "focus").forEach((b, i) => addEvent({ date, title: `${b.subject}: ${b.topic}`.slice(0, 80), type: "revision", subject: b.subject, time: hhmm(b.from), createdAt: Date.now() + i }));
+      if (typeof toast === "function") toast("Added today’s sessions to your calendar.");
+    }
+  });
+  const origOpen = openNow;
+  openNow = function () { origOpen.apply(this, arguments); if (mode === "day") setMode("day"); };
+  const nb = document.getElementById("now-btn");
+  if (nb) { nb.removeEventListener("click", origOpen); nb.addEventListener("click", () => openNow()); }
+})();
+
+/* ==========================================================================
+   Weekly recap on Home (Monday to Wednesday, or any time from Insights)
+   ========================================================================== */
+(function weeklyRecap() {
+  "use strict";
+  const home = document.getElementById("view-home");
+  if (!home || typeof store === "undefined") return;
+  const escH = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const isoD = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  const fmtM = m => (typeof fmtTime === "function" ? fmtTime(m) : `${m}m`);
+  const monday = off => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7) + off * 7); return d; };
+  const range = off => { const a = monday(off), b = new Date(a); b.setDate(a.getDate() + 6); return [isoD(a), isoD(b), a, b]; };
+  let forced = false;
+  const card = document.createElement("section");
+  card.className = "o-recap"; card.hidden = true;
+  const today = document.getElementById("today");
+  (today || home.firstElementChild).before(card);
+  function data() {
+    const [a, b, A, B] = range(-1), [pa, pb] = range(-2);
+    const sess = store.sessions.filter(s => s.date >= a && s.date <= b), prev = store.sessions.filter(s => s.date >= pa && s.date <= pb);
+    const mins = sess.reduce((x, s) => x + (+s.minutes || 0), 0), pmins = prev.reduce((x, s) => x + (+s.minutes || 0), 0);
+    const by = {}; sess.forEach(s => (by[s.subject] = (by[s.subject] || 0) + (+s.minutes || 0)));
+    const top = Object.entries(by).sort((x, y) => y[1] - x[1]);
+    const days = new Set(sess.map(s => s.date)).size;
+    let cards = null;
+    try { const cl = window.orchardSocial && window.orchardSocial.cardDays && window.orchardSocial.cardDays(); if (cl) cards = Object.entries(cl).filter(([k]) => k >= a && k <= b).reduce((x, [, n]) => x + n, 0); } catch (e) {}
+    let conf = null;
+    try { if (typeof ALL_SUBS !== "undefined" && typeof ragCounts === "function") conf = ragCounts(ALL_SUBS).score; } catch (e) {}
+    let rank = null;
+    try { rank = window.orchardSocial && window.orchardSocial.rank && window.orchardSocial.rank(); } catch (e) {}
+    const now = new Date(), wk = new Date(now); wk.setDate(now.getDate() + 7);
+    const ahead = [
+      ...(typeof EXAMS !== "undefined" ? EXAMS.filter(x => x.start > now && x.start < wk).map(x => ({ d: x.start, t: `${x.subject} ${x.paper}`, k: "Exam" })) : []),
+      ...(typeof evStore !== "undefined" ? evStore.events.filter(e => e.date >= isoD(now) && e.date <= isoD(wk) && e.type !== "revision").map(e => ({ d: new Date(e.date + "T12:00"), t: e.title, k: (typeof EV_TYPES !== "undefined" && EV_TYPES[e.type]) || "Event" })) : [])
+    ].sort((x, y) => x.d - y.d).filter((x, i, arr) => arr.findIndex(y => y.t === x.t && +y.d === +x.d) === i).slice(0, 5);
+    return { A, B, mins, pmins, sessions: sess.length, days, top, cards, conf, rank, ahead };
+  }
+  function render() {
+    const wkKey = range(-1)[0];
+    let dismissed = ""; try { dismissed = localStorage.getItem("orchard-recap-seen") || ""; } catch (e) {}
+    const dow = (new Date().getDay() + 6) % 7;
+    const show = forced || (dow <= 2 && dismissed !== wkKey);
+    card.hidden = !show;
+    if (!show) return;
+    const d = data();
+    const delta = d.pmins ? Math.round((d.mins - d.pmins) / d.pmins * 100) : null;
+    const span = `${d.A.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${d.B.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`;
+    card.innerHTML = `<div class="o-recap-head"><div><p class="eyebrow">Weekly recap</p><h2>Your week, ${span}</h2></div><button type="button" class="icon-btn" data-recap-close aria-label="Close recap"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button></div>
+      <div class="o-recap-stats">
+        <div><b>${d.mins ? fmtM(d.mins) : "0m"}</b><span>Studied${delta === null ? "" : ` · <em class="${delta >= 0 ? "up" : "down"}">${delta >= 0 ? "▲" : "▼"} ${Math.abs(delta)}%</em> vs week before`}</span></div>
+        <div><b>${d.days}<small>/7</small></b><span>Days you studied · ${d.sessions} session${d.sessions === 1 ? "" : "s"}</span></div>
+        <div><b>${d.cards === null ? "–" : d.cards.toLocaleString("en-GB")}</b><span>Flashcards reviewed</span></div>
+        <div><b>${d.rank ? `#${d.rank.pos}<small> of ${d.rank.of}</small>` : d.conf === null ? "–" : d.conf + "%"}</b><span>${d.rank ? "Among your friends" : "Overall confidence"}</span></div>
+      </div>
+      <div class="o-recap-cols">
+        <div><h3>Where your time went</h3>${d.top.length ? `<ul class="o-recap-bars">${d.top.slice(0, 5).map(([s, m]) => `<li><span>${escH(s)}</span><i style="--w:${Math.round(m / d.top[0][1] * 100)}%"></i><b>${fmtM(m)}</b></li>`).join("")}</ul>` : `<p class="o-dim">No sessions logged last week. This week is a fresh start.</p>`}</div>
+        <div><h3>Coming up this week</h3>${d.ahead.length ? `<ul class="o-recap-ahead">${d.ahead.map(x => `<li><span>${x.d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric" })}</span><b>${escH(x.t)}</b><em>${escH(x.k)}</em></li>`).join("")}</ul>` : `<p class="o-dim">Nothing in the calendar for the next 7 days.</p>`}
+          <button type="button" class="chip sm" data-recap-plan>Plan today</button></div>
+      </div>`;
+  }
+  card.addEventListener("click", e => {
+    if (e.target.closest("[data-recap-close]")) { forced = false; try { localStorage.setItem("orchard-recap-seen", range(-1)[0]); } catch (x) {} render(); }
+    if (e.target.closest("[data-recap-plan]")) { document.getElementById("now-btn")?.click(); setTimeout(() => document.querySelector('[data-nowmode="day"]')?.click(), 30); }
+  });
+  const ins = home.querySelector(".o-insights .section-head") || [...home.querySelectorAll(".section-head")].find(h => /Insights/.test(h.textContent));
+  if (ins) { const b = document.createElement("button"); b.type = "button"; b.className = "o-linkbtn"; b.textContent = "Weekly recap"; b.addEventListener("click", () => { forced = true; render(); card.scrollIntoView({ behavior: "smooth", block: "start" }); }); ins.insertBefore(b, ins.lastElementChild); }
+  render();
+  setTimeout(render, 2500); setTimeout(render, 8000);
+  addEventListener("hashchange", () => { if ((location.hash || "#home") === "#home") render(); });
+})();
+
+/* ==========================================================================
+   "Ask the tutor" on every subtopic page
+   ========================================================================== */
+(function explainThis() {
+  "use strict";
+  if (typeof renderSubjectDetail !== "function") return;
+  const orig = renderSubjectDetail;
+  renderSubjectDetail = function (def) {
+    const out = orig.apply(this, arguments);
+    try {
+      const s = def.subs.find(x => x.key === def.ui.detailKey);
+      const title = def.el.detail.querySelector(".sub-detail > .page-title");
+      if (s && title && !def.el.detail.querySelector(".o-explain")) {
+        title.insertAdjacentHTML("afterend", `<div class="o-explain"><button type="button" class="chip" data-explain="explain"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/></svg>Explain this</button><button type="button" class="chip" data-explain="quiz">Quiz me on it</button><button type="button" class="chip" data-explain="exam">Exam question</button></div>`);
+        def.el.detail.querySelector(".o-explain").addEventListener("click", e => {
+          const b = e.target.closest("[data-explain]"); if (!b) return;
+          const where = `“${s.name}” (${s.topic.name}, GCSE ${def.subject})`;
+          const msg = { explain: `Explain ${where} clearly at GCSE level, with an example, then ask me one quick question to check I’ve got it.`,
+            quiz: `Quiz me on ${where}. Ask one question at a time, wait for my answer, then mark it and give the model answer.`,
+            exam: `Give me one exam-style question on ${where} with the marks shown. Wait for my answer, then mark it like an examiner.` }[b.dataset.explain];
+          if (window.orchardAsk) window.orchardAsk(msg);
+        });
+      }
+    } catch (e) {}
+    return out;
+  };
+})();

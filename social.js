@@ -29,6 +29,8 @@
   const online = p => p && p.last_seen && Date.now() - new Date(p.last_seen).getTime() < 5 * 60 * 1000;
   const missingTable = e => e && (/relation .* does not exist|Could not find the (table|function)|schema cache/i.test(e.message || "") || ["42P01", "PGRST205", "PGRST202", "42883"].includes(e.code));
   const ICON = {
+    door: '<path d="M5 21V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v16"/><path d="M3 21h18M14.5 12.5v.01"/>',
+    megaphone: '<path d="M4 10v4h3l7 4V6L7 10z"/><path d="M17 9a4 4 0 0 1 0 6M7 14l1 5h2.5"/>',
     chat: '<path d="M4.5 6.5a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H11l-4.5 3.5v-3.5h0a2 2 0 0 1-2-2z"/><path d="M8.5 9.5h7M8.5 12.5h4"/>',
     trophy: '<path d="M8 4.5h8v5a4 4 0 0 1-8 0z"/><path d="M8 6.5H5.5a2.5 2.5 0 0 0 2.6 3.6M16 6.5h2.5a2.5 2.5 0 0 1-2.6 3.6M12 13.5v3M9 19.5h6M10 16.5h4v3h-4z"/>',
     people: '<circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5"/><circle cx="16.5" cy="8" r="2.6"/><path d="M15.5 13.2c.4-.1.7-.1 1-.1 2.3 0 4.1 1.5 4.6 4.4"/>',
@@ -166,6 +168,7 @@
     me: null, uid: null, profile: null, setup: false, setup2: true, loaded: false, loading: false,
     people: new Map(), requests: [], outgoing: [], notes: [], cheers: new Map(),
     messages: [], awards: [], isAdmin: false, adminAwards: [], adminIds: new Set(),
+    rooms: [], members: [], announcements: [], stats: null, setup4: true, room: null, skew: 0,
     seg: "hood", draft: null, thread: null, sig: ""
   };
   try { S.seg = localStorage.getItem("orchard-social-seg") || "hood"; } catch (e) {}
@@ -235,17 +238,24 @@
       const pr = await sb.from("profiles").select("*");
       if (pr.error) { if (missingTable(pr.error)) { S.setup = true; S.loaded = true; render(); return; } throw pr.error; }
       S.setup = false;
+      loadAnnouncements();
       S.people = new Map(pr.data.map(p => [p.id, p]));
       S.profile = S.people.get(S.uid) || null;
       if (S.profile) {
-        const [rq, out, nt, ms, aw, adm] = await Promise.all([
+        const since = new Date(Date.now() - 12 * 3600e3).toISOString();
+        const [rq, out, nt, ms, aw, adm, rm, mm] = await Promise.all([
           sb.from("friend_requests").select("*"),
           sb.rpc("my_outgoing"),
           sb.from("notes").select("id,user_id,body,created_at").order("created_at", { ascending: false }).limit(80),
           sb.from("messages").select("*").order("created_at", { ascending: false }).limit(600),
           sb.from("awards").select("*"),
-          sb.rpc("is_admin")
+          sb.rpc("is_admin"),
+          sb.from("rooms").select("*").gte("created_at", since).order("created_at", { ascending: false }),
+          sb.from("room_members").select("*")
         ]);
+        S.setup4 = !(rm.error && missingTable(rm.error));
+        S.rooms = rm.data || [];
+        S.members = (mm.data || []).filter(m => S.rooms.some(r => r.id === m.room_id));
         S.requests = rq.data || [];
         S.outgoing = out.data || [];
         S.notes = (nt.data || []).filter(n => S.people.has(n.user_id));
@@ -255,7 +265,11 @@
         S.isAdmin = !!adm.data;
         const ai = await sb.rpc("admin_ids");
         S.adminIds = new Set(ai.error ? (S.isAdmin ? [S.uid] : []) : (ai.data || []).map(r => (r && r.user_id) || r));
-        if (S.isAdmin) { const x = await sb.rpc("admin_awards"); S.adminAwards = x.data || []; }
+        if (S.isAdmin) {
+          const [x, st] = await Promise.all([sb.rpc("admin_awards"), sb.rpc("admin_stats")]);
+          S.adminAwards = x.data || [];
+          S.stats = st.error ? null : (Array.isArray(st.data) ? st.data[0] : st.data) || null;
+        }
         const ids = S.notes.map(n => n.id);
         S.cheers = new Map();
         if (ids.length) {
@@ -265,9 +279,12 @@
       }
       S.loaded = true;
       const sig = JSON.stringify([[...S.people.values()].map(p => [p.id, p.display_name, p.handle, p.avatar, p.status, p.share_stats, p.stats && [p.stats.weekMins, p.stats.streak, p.stats.cardsWeek, p.stats.mastered], online(p)]),
-        S.requests, S.outgoing, S.notes.map(n => n.id), [...S.cheers], S.messages.map(m => [m.id, !!m.read_at]), S.awards.map(a => a.id), [...S.adminIds], S.isAdmin, S.adminAwards.map(a => a.id)]);
+        S.requests, S.outgoing, S.notes.map(n => n.id), [...S.cheers], S.messages.map(m => [m.id, !!m.read_at]), S.awards.map(a => a.id), [...S.adminIds], S.isAdmin, S.adminAwards.map(a => a.id),
+        S.rooms.map(r => [r.id, r.started_at, r.minutes, r.name]), S.members.map(m => [m.room_id, m.user_id, m.subject, Date.now() - new Date(m.last_seen).getTime() < 45000]), S.stats, S.announcements.map(a => a.id)]);
       if (sig !== S.sig || !root.querySelector(".page-head")) { S.sig = sig; if (!quiet || location.hash === "#social") render(); }
       heartbeat();
+      checkAlerts();
+      if (S.room && location.hash === "#social" && S.seg === "rooms") tickRoom();
     } catch (e) {
       console.error(e);
       S.loaded = true;
@@ -289,8 +306,8 @@
 
   /* ---------- page shell ---------- */
   function segs() {
-    const list = [["hood", "The Neighbourhood"], ["messages", "Messages"], ["boards", "Leaderboards"], ["friends", "Friends"], ["profile", "Profile"]];
-    if (S.isAdmin) list.push(["admin", "Badges"]);
+    const list = [["hood", "The Neighbourhood"], ["messages", "Messages"], ["rooms", "Study rooms"], ["boards", "Leaderboards"], ["friends", "Friends"], ["profile", "Profile"]];
+    if (S.isAdmin) list.push(["admin", "Admin"]);
     return list;
   }
   function shell(body, withSegs) {
@@ -301,7 +318,7 @@
         <p class="page-sub">Revise alongside your friends. Message them, climb the leaderboards and keep your streaks alive together.</p></div>
         ${S.profile ? `<div class="nb-me">${badgeRow(S.uid, 4)}<span class="nb-me-av">${avatar(S.profile)}</span><span><b>${escH(S.profile.display_name)}</b><span>@${escH(S.profile.handle)}</span></span></div>` : ""}
       </div>
-      ${withSegs ? `<div class="seg nb-seg" role="tablist" aria-label="Social sections">${segs().map(([id, l]) => `<button type="button" role="tab" data-seg="${id}" aria-selected="${S.seg === id}">${l}${id === "friends" ? count(inc) : id === "messages" ? count(un) : ""}</button>`).join("")}</div>` : ""}
+      ${withSegs ? `<div class="seg nb-seg" role="tablist" aria-label="Social sections">${segs().map(([id, l]) => `<button type="button" role="tab" data-seg="${id}" aria-selected="${S.seg === id}">${l}${id === "friends" ? count(inc) : id === "messages" ? count(un) : id === "rooms" ? liveDot() : ""}</button>`).join("")}</div>` : ""}
       ${body}`;
   }
   function render() {
@@ -314,8 +331,10 @@
     }
     if (!S.profile) { renderOnboarding(); return; }
     if (!segs().some(([id]) => id === S.seg)) S.seg = "hood";
-    const body = { friends: friendsHTML, profile: profileHTML, messages: messagesHTML, boards: boardsHTML, admin: adminHTML }[S.seg] || hoodHTML;
+    stopRoomTimers();
+    const body = { friends: friendsHTML, profile: profileHTML, messages: messagesHTML, boards: boardsHTML, admin: adminHTML, rooms: roomsHTML }[S.seg] || hoodHTML;
     root.innerHTML = shell(body(), true);
+    if (S.seg === "rooms") startRoomTimers();
     if (S.seg === "hood" && location.hash === "#social") startPlaza();
     if (S.seg === "profile") wireEditor(root.querySelector(".nb-editor"));
     if (S.seg === "messages") afterMessages();
@@ -331,7 +350,7 @@
     { id: "board", label: "Notice board", icon: "pin", x: 190, z: 1680, go: "notice", hue: "#ff9a6b" },
     { id: "friends", label: "Friends", icon: "people", x: 560, z: 1630, go: "seg:friends", hue: "#7ed08a" },
     { id: "study", label: "Study log", icon: "clock", x: -450, z: 1080, go: "#study-log", hue: "#c3d48f" },
-    { id: "cards", label: "Flashcards", icon: "cards", x: -150, z: 1140, go: "seg:boards", hue: "#c59bff" },
+    { id: "rooms", label: "Study rooms", icon: "door", x: -150, z: 1140, go: "seg:rooms", hue: "#c59bff" },
     { id: "ai", label: "AI tutor", icon: "spark", x: 150, z: 1110, go: "#ai", hue: "#8fe0ff" },
     { id: "you", label: "Profile", icon: "smile", x: 450, z: 1070, go: "seg:profile", hue: "#ff8fb1" }
   ];
@@ -341,10 +360,11 @@
     const st = p.stats || {};
     if (unreadFrom(p.id)) return "messages";
     if (online(p) && st.todayMins) return "study";
-    if (st.cardsToday) return "cards";
+    if (inRoomNow(p.id)) return "rooms";
+    if (st.cardsToday) return "boards";
     if (latestNote(p.id)) return "board";
     const h = [...String(p.id)].reduce((a, c) => a + c.charCodeAt(0), 0);
-    return ["boards", "friends", "study", "board", "ai", "cards"][h % 6];
+    return ["boards", "friends", "study", "board", "ai", "rooms"][h % 6];
   }
 
   let P = null; // plaza runtime
@@ -428,7 +448,7 @@
     P.tiles = TILES.map((t, i) => {
       const el = document.createElement("button");
       el.type = "button"; el.className = "nb-tile"; el.dataset.go = t.go; el.style.setProperty("--hue", t.hue);
-      const n = t.id === "messages" ? unreadFrom() : t.id === "friends" ? incoming().length : 0;
+      const n = t.id === "messages" ? unreadFrom() : t.id === "friends" ? incoming().length : t.id === "rooms" ? liveRooms().length : 0;
       el.innerHTML = `<span class="nb-tile-face">${icon(t.icon, "nb-tile-ico")}<span class="nb-tile-shine"></span></span><span class="nb-tile-label">${t.label}</span>${n ? `<span class="nb-tile-n">${n}</span>` : ""}`;
       el.setAttribute("aria-label", t.label + (n ? ` (${n} new)` : ""));
       world.appendChild(el);
@@ -693,7 +713,25 @@
   let awardTarget = null, awardBadge = "crown";
   function adminHTML() {
     if (!S.setup2) return needs2("Badges");
+    const st = S.stats;
+    const tile = (v, k) => `<div class="nb-stat"><b>${v == null ? "–" : Number(v).toLocaleString("en-GB")}</b><span>${k}</span></div>`;
     return `<div class="nb-admin">
+      <section class="o-card"><h3>Overview</h3>
+        ${st ? `<div class="nb-stats">${tile(st.accounts, "Accounts")}${tile(st.profiles, "In Social")}${tile(st.active_week, "Active this week")}${tile(st.online_now, "Online now")}${tile(st.friendships, "Friendships")}${tile(st.messages_week, "Messages this week")}${tile(st.notes_week, "Notes this week")}${tile(st.rooms_week, "Study rooms this week")}</div>`
+          : `<p class="o-dim">Stats need <code>supabase-social-4.sql</code> to be run in Supabase.</p>`}
+      </section>
+      <section class="o-card"><h3>Announcements</h3>
+        <p class="o-dim o-small">Shown as a banner at the top of The Orchard for everyone, until it expires or they dismiss it.</p>
+        ${S.setup4 ? `<form id="nb-ann" class="nb-ann">
+          <textarea class="input" name="body" maxlength="240" rows="2" required placeholder="e.g. Mocks start Monday. Good luck, everyone."></textarea>
+          <div class="nb-ann-row">
+            <label class="nb-sel"><span>Style</span><select class="input" name="tone"><option value="info">Information</option><option value="good">Good news</option><option value="warn">Important</option></select></label>
+            <label class="nb-sel"><span>Show for</span><select class="input" name="days"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>1 week</option><option value="30">30 days</option><option value="0">Until removed</option></select></label>
+            <button class="primary" type="submit">Post announcement</button>
+          </div></form>
+          ${S.announcements.length ? `<ul class="nb-list">${S.announcements.map(a => `<li class="nb-row"><span class="nb-ann-dot ${a.tone}"></span><span class="nb-who"><b class="nb-wrap">${escH(a.body)}</b><span>${ago(a.created_at)}${a.expires_at ? ` · until ${new Date(a.expires_at).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}` : " · no end date"}</span></span><span class="nb-row-act"><button class="chip sm" data-act="ann-del" data-id="${a.id}">Remove</button></span></li>`).join("")}</ul>` : ""}`
+          : `<p class="o-dim">Run <code>supabase-social-4.sql</code> in Supabase to turn on announcements.</p>`}
+      </section>
       <section class="o-card nb-give"><h3>Give a badge</h3>
         <form id="nb-award-find" class="nb-find"><span class="nb-at">@</span><input class="input" name="h" placeholder="their handle" autocomplete="off" autocapitalize="none" spellcheck="false" required value="${awardTarget ? escH(awardTarget.handle) : ""}"><button class="chip" type="submit">Find</button></form>
         <div id="nb-award-who">${awardTarget ? `<ul class="nb-list">${personRow(awardTarget, "")}</ul>` : ""}</div>
@@ -703,6 +741,216 @@
       <section class="o-card"><h3>Badges given <span class="o-dim">${S.adminAwards.length}</span></h3>
         ${S.adminAwards.length ? `<ul class="nb-list">${S.adminAwards.map(a => `<li class="nb-row">${badgeSVG(a.badge, "md")}<span class="nb-who"><b>${escH(a.display_name)} <span class="o-dim">@${escH(a.handle)}</span></b><span>${BADGES[a.badge] ? BADGES[a.badge].name : escH(a.badge)}${a.note ? " · " + escH(a.note) : ""} · ${ago(a.created_at)}</span></span><span class="nb-row-act"><button class="chip sm" data-act="revoke" data-id="${a.id}">Take back</button></span></li>`).join("")}</ul>` : `<p class="o-dim">None yet.</p>`}
       </section></div>`;
+  }
+
+  /* ==========================================================================
+     STUDY ROOMS
+     ========================================================================== */
+  const nowMs = () => Date.now() + S.skew;
+  const live = m => m && Date.now() - new Date(m.last_seen).getTime() < 45000;
+  const roomMembers = id => S.members.filter(m => m.room_id === id && S.people.has(m.user_id));
+  const roomState = r => !r.started_at ? "waiting" : nowMs() < new Date(r.ends_at).getTime() ? "running" : "done";
+  const liveRooms = () => S.rooms.filter(r => roomState(r) !== "done" || nowMs() - new Date(r.ends_at).getTime() < 15 * 60000);
+  const inRoomNow = id => S.members.some(m => m.user_id === id && live(m) && S.rooms.some(r => r.id === m.room_id && roomState(r) === "running"));
+  const liveDot = () => (S.rooms.some(r => roomState(r) === "running") ? ' <i class="nb-live nb-live-inline"></i>' : "");
+  const mmss = ms => { const t = Math.max(0, Math.ceil(ms / 1000)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, "0")}`; };
+  let roomTick = 0, roomPoll = 0, roomBeat = 0, newMins = 25;
+  function roomsHTML() {
+    if (!S.setup4) return `<div class="nb-empty"><h2>Study rooms need one more step</h2><p>Run <code>supabase-social-4.sql</code> in your Supabase project (SQL Editor → New query → paste → Run), then reload.</p></div>`;
+    const mine = S.room && S.rooms.find(r => r.id === S.room);
+    if (mine && S.members.some(m => m.room_id === mine.id && m.user_id === S.uid)) return roomViewHTML(mine);
+    const list = liveRooms();
+    const subj = (typeof DATA !== "undefined" ? DATA.subjects : []);
+    return `<div class="nb-rooms">
+      <section class="o-card nb-room-new"><h3>Open a study room</h3>
+        <p class="o-dim o-small">Friends can see your room and join. When you press Start, everyone gets the same countdown, and the time is logged to each person’s Study log when it ends.</p>
+        <form id="nb-room-new" class="nb-room-form">
+          <label class="field"><span>Room name</span><input class="input" name="name" maxlength="40" required value="${escH((S.profile.display_name || "My").split(" ")[0])}’s study room"></label>
+          <label class="field"><span>You’re studying</span><select class="input" name="subject">${subj.map(x => `<option>${escH(x)}</option>`).join("")}</select></label>
+          <div class="field"><span>Length</span><div class="chips">${[25, 45, 60, 90].map(m => `<button type="button" class="chip" data-newmins="${m}" aria-pressed="${newMins === m}">${m} min</button>`).join("")}</div></div>
+          <button class="primary" type="submit">Open room</button>
+        </form>
+      </section>
+      <section class="o-card"><h3>Live rooms</h3>
+        ${list.length ? `<ul class="nb-room-list">${list.map(r => {
+          const owner = S.people.get(r.owner_id), ms = roomMembers(r.id), st = roomState(r), joined = ms.some(m => m.user_id === S.uid);
+          return `<li class="nb-room-item"><span class="nb-room-ico">${icon("door")}</span>
+            <span class="nb-who"><b>${escH(r.name)}</b><span>${owner ? (r.owner_id === S.uid ? "Your room" : `Opened by ${escH(owner.display_name)}`) : ""} · ${r.minutes} min · ${st === "waiting" ? "Waiting to start" : st === "running" ? `<span class="nb-run" data-ends="${new Date(r.ends_at).getTime()}">${mmss(new Date(r.ends_at).getTime() - nowMs())} left</span>` : "Finished"}</span></span>
+            <span class="nb-stack">${ms.slice(0, 5).map(m => `<span class="nb-mini">${avatar(S.people.get(m.user_id))}</span>`).join("")}${ms.length > 5 ? `<em>+${ms.length - 5}</em>` : ""}</span>
+            <span class="nb-row-act">${joined ? `<button class="primary" data-act="room-open" data-id="${r.id}">Open</button>` : st === "done" ? "" : `<button class="primary" data-act="room-join" data-id="${r.id}">Join</button>`}</span></li>`;
+        }).join("")}</ul>` : `<p class="o-dim">No rooms open right now. Open one and your friends will see it here.</p>`}
+      </section></div>`;
+  }
+  function roomViewHTML(r) {
+    const owner = S.people.get(r.owner_id), ms = roomMembers(r.id), isOwner = r.owner_id === S.uid;
+    const me = ms.find(m => m.user_id === S.uid);
+    const subj = (typeof DATA !== "undefined" ? DATA.subjects : []);
+    return `<div class="nb-room">
+      <section class="o-card nb-room-main">
+        <div class="nb-room-head"><button type="button" class="chip sm" data-act="room-back">← All rooms</button>
+          <div><h3>${escH(r.name)}</h3><p class="o-dim o-small">${isOwner ? "You opened this room" : `Opened by ${escH(owner ? owner.display_name : "a friend")}`}</p></div></div>
+        <div class="nb-clock" id="nb-clock" style="--p:0"><svg viewBox="0 0 200 200" aria-hidden="true"><circle cx="100" cy="100" r="88" class="nb-clock-bg"/><circle cx="100" cy="100" r="88" class="nb-clock-fg" pathLength="100"/></svg>
+          <div class="nb-clock-c"><b id="nb-clock-t">${r.minutes}:00</b><span id="nb-clock-s">Waiting to start</span></div></div>
+        <div class="nb-room-ctl">
+          ${isOwner ? `<div class="chips">${[25, 45, 60, 90].map(m => `<button type="button" class="chip" data-roommins="${m}" aria-pressed="${r.minutes === m}">${m} min</button>`).join("")}</div>
+            <button class="primary" data-act="room-start" data-id="${r.id}">${r.started_at ? "Restart" : "Start for everyone"}</button>` : `<p class="o-dim o-small">${r.started_at ? `${escH(owner ? owner.display_name : "The host")} started a ${r.minutes}-minute session. Everyone shares this timer.` : `${escH(owner ? owner.display_name : "The host")} will start the timer.`}</p>`}
+        </div>
+        <div class="nb-room-foot">
+          <label class="nb-sel"><span>You’re studying</span><select class="input" id="nb-room-subj">${subj.map(x => `<option ${me && me.subject === x ? "selected" : ""}>${escH(x)}</option>`).join("")}</select></label>
+          <span class="nb-row-act">${isOwner ? `<button class="chip" data-act="room-close" data-id="${r.id}">Close room</button>` : ""}<button class="chip" data-act="room-leave" data-id="${r.id}">Leave</button></span>
+        </div>
+      </section>
+      <section class="o-card nb-room-people"><h3>In the room <span class="o-dim">${ms.length}</span></h3>
+        <ul class="nb-list">${ms.map(m => { const p = S.people.get(m.user_id); return `<li class="nb-row"><span class="nb-mini">${avatar(p)}${live(m) ? '<i class="nb-dot nb-dot-av"></i>' : ""}</span><span class="nb-who"><b>${escH(p.display_name)}${m.user_id === S.uid ? " (you)" : ""}${badgeRow(p.id, 2)}</b><span>${escH(m.subject || "Studying")}${live(m) ? "" : " · away"}</span></span></li>`; }).join("")}</ul>
+        <p class="o-dim o-small">Keep this page open during the session. Phones in another room work best.</p>
+      </section></div>`;
+  }
+  function tickRoom() {
+    const r = S.room && S.rooms.find(x => x.id === S.room);
+    document.querySelectorAll(".nb-run[data-ends]").forEach(el => { el.textContent = `${mmss(+el.dataset.ends - nowMs())} left`; });
+    if (!r) return;
+    const clock = document.getElementById("nb-clock"); if (!clock) return;
+    const st = roomState(r), total = r.minutes * 60000;
+    let left = total, label = "Waiting to start";
+    if (st === "running") { left = new Date(r.ends_at).getTime() - nowMs(); label = "Focus time"; }
+    if (st === "done") { left = 0; label = "Session complete"; finishRoom(r); }
+    clock.style.setProperty("--p", String(Math.round((1 - left / total) * 1000) / 10));
+    clock.classList.toggle("running", st === "running"); clock.classList.toggle("done", st === "done");
+    document.getElementById("nb-clock-t").textContent = mmss(left);
+    document.getElementById("nb-clock-s").textContent = label;
+  }
+  function finishRoom(r) {
+    const key = `orchard-room-${r.id}-${r.started_at}`;
+    try { if (localStorage.getItem(key)) return; localStorage.setItem(key, "1"); } catch (e) { return; }
+    const me = S.members.find(m => m.room_id === r.id && m.user_id === S.uid); if (!me) return;
+    const from = Math.max(new Date(r.started_at).getTime(), new Date(me.joined_at).getTime());
+    const mins = Math.min(r.minutes, Math.round((new Date(r.ends_at).getTime() - from) / 60000));
+    if (mins < 1 || typeof addSession !== "function") return;
+    const subject = me.subject && (typeof DATA === "undefined" || DATA.subjects.includes(me.subject)) ? me.subject : (typeof ft !== "undefined" ? ft.subject : "");
+    const d = new Date();
+    addSession({ date: iso(d), subject, topic: `Study room: ${r.name}`.slice(0, 120), minutes: mins, rag: "", note: "", createdAt: Date.now() })
+      .then(() => { say(`Session complete. ${fmt(mins)} of ${subject} logged.`); notify("Study room finished", `${fmt(mins)} of ${subject} logged. Take a break.`, "room-done-" + r.id); })
+      .catch(() => {});
+  }
+  async function pollRoom() {
+    if (!S.room || document.visibilityState !== "visible") return;
+    const [r, m] = await Promise.all([sb.from("rooms").select("*").eq("id", S.room).maybeSingle(), sb.from("room_members").select("*").eq("room_id", S.room)]);
+    if (r.error || !r.data) { if (!r.error) { S.room = null; say("That room has closed."); render(); } return; }
+    const before = JSON.stringify([S.rooms.find(x => x.id === S.room), roomMembers(S.room).map(x => [x.user_id, x.subject, live(x)])]);
+    S.rooms = [r.data, ...S.rooms.filter(x => x.id !== S.room)];
+    S.members = [...S.members.filter(x => x.room_id !== S.room), ...(m.data || [])];
+    const after = JSON.stringify([r.data, roomMembers(S.room).map(x => [x.user_id, x.subject, live(x)])]);
+    if (before !== after && !document.querySelector(".nb-room :focus")) render();
+  }
+  async function roomHeartbeat() {
+    if (!S.room || document.visibilityState !== "visible") return;
+    await sb.from("room_members").update({ last_seen: new Date().toISOString() }).eq("room_id", S.room).eq("user_id", S.uid);
+  }
+  function startRoomTimers() {
+    stopRoomTimers();
+    tickRoom(); roomTick = setInterval(tickRoom, 1000);
+    if (S.room) { roomPoll = setInterval(pollRoom, 4000); roomBeat = setInterval(roomHeartbeat, 15000); roomHeartbeat(); }
+  }
+  function stopRoomTimers() { clearInterval(roomTick); clearInterval(roomPoll); clearInterval(roomBeat); }
+  async function syncClock() { const r = await sb.rpc("server_now"); if (!r.error && r.data) S.skew = new Date(r.data).getTime() - Date.now(); }
+
+  /* ==========================================================================
+     ANNOUNCEMENTS BANNER (everyone)
+     ========================================================================== */
+  async function loadAnnouncements() {
+    let r;
+    try { r = await sb.from("announcements").select("*").order("created_at", { ascending: false }).limit(20); } catch (e) { r = { error: e }; }
+    if (r.error) { S.announcements = []; return; }
+    const now = Date.now();
+    S.announcements = (r.data || []).filter(a => !a.expires_at || new Date(a.expires_at).getTime() > now);
+    showBanner();
+  }
+  function showBanner() {
+    let dismissed = [];
+    try { dismissed = JSON.parse(localStorage.getItem("orchard-ann-dismissed") || "[]"); } catch (e) {}
+    const a = S.announcements.find(x => !dismissed.includes(x.id));
+    let el = document.getElementById("o-announce");
+    if (!a) { if (el) el.remove(); return; }
+    if (!el) { el = document.createElement("div"); el.id = "o-announce"; el.setAttribute("role", "status"); document.querySelector("main")?.prepend(el); }
+    el.className = "o-announce " + a.tone;
+    el.innerHTML = `<span class="o-ann-ico">${icon("megaphone")}</span><p>${escH(a.body)}</p><span class="o-ann-meta">${ago(a.created_at)}</span><button type="button" aria-label="Dismiss announcement" data-ann-dismiss="${a.id}">×</button>`;
+  }
+  document.addEventListener("click", e => {
+    const d = e.target.closest("[data-ann-dismiss]"); if (!d) return;
+    let list = []; try { list = JSON.parse(localStorage.getItem("orchard-ann-dismissed") || "[]"); } catch (x) {}
+    list.push(+d.dataset.annDismiss); try { localStorage.setItem("orchard-ann-dismissed", JSON.stringify(list.slice(-50))); } catch (x) {}
+    showBanner();
+  });
+
+  /* ==========================================================================
+     NOTIFICATIONS: tab count, favicon dot and desktop alerts
+     ========================================================================== */
+  const notifyOn = () => { try { return localStorage.getItem("orchard-notify") === "on" && "Notification" in window && Notification.permission === "granted"; } catch (e) { return false; } };
+  function notify(title, body, tag, go) {
+    if (!notifyOn() || (document.visibilityState === "visible" && document.hasFocus())) return;
+    showNote(title, { body, tag, icon: "icon-192.png", badge: "icon-192.png" }, () => { window.focus(); if (go) { location.hash = "#social"; S.seg = go.seg; if (go.thread) S.thread = go.thread; render(); } });
+  }
+  function showNote(title, opts, onclick) {
+    try {
+      const n = new Notification(title, opts);
+      n.onclick = () => { if (onclick) onclick(); n.close(); };
+    } catch (e) {
+      // Android only allows notifications through the service worker
+      if (navigator.serviceWorker) navigator.serviceWorker.ready.then(r => r.showNotification(title, opts)).catch(() => {});
+    }
+  }
+  let seenInit = false;
+  function checkAlerts() {
+    if (!S.profile) return;
+    let seen = { m: [], r: [], a: [], room: [] };
+    try { seen = { ...seen, ...JSON.parse(localStorage.getItem("orchard-seen-" + S.uid) || "{}") }; } catch (e) {}
+    const msgs = S.messages.filter(m => m.to_id === S.uid && !m.read_at);
+    const reqs = incoming().map(x => x.r);
+    const mine = S.awards.filter(a => a.user_id === S.uid);
+    const rooms = S.rooms.filter(r => r.owner_id !== S.uid && roomState(r) !== "done");
+    const fresh = (list, key) => list.filter(x => !seen[key].includes(x.id));
+    if (seenInit || seen.init) {
+      fresh(msgs, "m").slice(-3).forEach(m => { const p = S.people.get(m.from_id); notify(`Message from ${p ? p.display_name : "a friend"}`, m.body.slice(0, 120), "msg-" + m.from_id, { seg: "messages", thread: m.from_id }); });
+      fresh(reqs, "r").forEach(r => { const p = S.people.get(r.from_id); notify("New friend request", `${p ? p.display_name + " (@" + p.handle + ")" : "Someone"} wants to be friends.`, "req-" + r.id, { seg: "friends" }); });
+      fresh(mine, "a").forEach(a => { notify(`You’ve been given the ${BADGES[a.badge] ? BADGES[a.badge].name : a.badge} badge`, a.note || BADGES[a.badge]?.desc || "", "award-" + a.id, { seg: "profile" }); if (document.visibilityState === "visible") say(`You’ve been given the ${BADGES[a.badge] ? BADGES[a.badge].name : ""} badge!`); });
+      fresh(rooms, "room").forEach(r => { const p = S.people.get(r.owner_id); notify("Study room open", `${p ? p.display_name : "A friend"} opened “${r.name}”. Join them?`, "room-" + r.id, { seg: "rooms" }); });
+    }
+    seenInit = true;
+    const next = { init: 1, m: msgs.map(x => x.id).slice(-200), r: reqs.map(x => x.id), a: mine.map(x => x.id), room: rooms.map(x => x.id).slice(-50) };
+    try { localStorage.setItem("orchard-seen-" + S.uid, JSON.stringify(next)); } catch (e) {}
+    updateTitle();
+  }
+  const baseIcon = document.querySelector('link[rel="icon"]')?.getAttribute("href") || "icon.svg";
+  let lastCount = -1;
+  function updateTitle() {
+    const n = S.profile ? incoming().length + unreadFrom() : 0;
+    const t = document.title.replace(/^\(\d+\)\s*/, "");
+    document.title = n ? `(${n}) ${t}` : t;
+    if (n === lastCount) return;
+    lastCount = n;
+    const link = document.querySelector('link[rel="icon"]'); if (!link) return;
+    if (!n) { link.href = baseIcon; return; }
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas"); c.width = c.height = 64;
+      const g = c.getContext("2d"); g.drawImage(img, 0, 0, 64, 64);
+      g.fillStyle = "#e0483c"; g.beginPath(); g.arc(48, 16, 15, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#fff"; g.lineWidth = 3; g.stroke();
+      link.href = c.toDataURL("image/png");
+    };
+    img.src = baseIcon;
+  }
+  setInterval(updateTitle, 2000);
+  function notifyHTML() {
+    const supported = "Notification" in window;
+    const perm = supported ? Notification.permission : "unsupported";
+    const on = notifyOn();
+    return `<section class="o-card nb-notify"><h3>Notifications</h3>
+      <p class="o-dim o-small">Get a desktop or phone notification for new messages, friend requests, badges and friends’ study rooms. They arrive while The Orchard is open in a tab or installed as an app.</p>
+      ${!supported ? `<p class="o-dim">This browser doesn’t support notifications.</p>`
+        : perm === "denied" ? `<p class="o-dim">Notifications are blocked for this site. Allow them in your browser’s site settings, then reload.</p>`
+        : `<div class="nb-row-act nb-left-act"><button class="${on ? "chip" : "primary"}" data-act="notify-toggle">${on ? "Turn off notifications" : "Turn on notifications"}</button>${on ? `<button class="chip" data-act="notify-test">Send a test</button>` : ""}</div>`}
+    </section>`;
   }
 
   /* ==========================================================================
@@ -765,7 +1013,7 @@
       </div></form>`;
   }
   function suggestHandle() { return ((S.me.name || "student").toLowerCase().replace(/[^a-z0-9]+/g, "").slice(0, 14) || "student") + Math.floor(Math.random() * 90 + 10); }
-  function profileHTML() { return `<section class="o-card nb-profile"><h3>Profile</h3>${editorHTML(S.profile)}</section>`; }
+  function profileHTML() { return `<section class="o-card nb-profile"><h3>Profile</h3>${editorHTML(S.profile)}</section>${notifyHTML()}`; }
   function renderOnboarding() {
     root.innerHTML = shell(`<div class="nb-welcome">
       <div class="nb-welcome-art"><div class="nb-welcome-grid"></div>
@@ -834,6 +1082,15 @@
     }
     const person = e.target.closest(".nb-person:not(.nb-static)");
     if (person) { showPop(person.dataset.id); return; }
+    const nm = e.target.closest("[data-newmins]");
+    if (nm) { newMins = +nm.dataset.newmins; root.querySelectorAll("[data-newmins]").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.newmins === newMins))); return; }
+    const rmm = e.target.closest("[data-roommins]");
+    if (rmm && S.room) {
+      const mins = +rmm.dataset.roommins, rr = S.rooms.find(x => x.id === S.room);
+      if (rr && !rr.started_at) { const r = await sb.from("rooms").update({ minutes: mins }).eq("id", rr.id); if (!r.error) rr.minutes = mins; }
+      else if (rr) rr.minutes = mins;
+      render(); return;
+    }
     const zb = e.target.closest("[data-zoom]");
     if (zb && P) { setZoom(P.zoomI + +zb.dataset.zoom); return; }
     const th = e.target.closest("[data-thread]");
@@ -872,8 +1129,40 @@
         say({ sent: "Request sent.", accepted: "They’d already asked you, so you’re now friends!", already_sent: "You’ve already asked them.", already_friends: "You’re already friends." }[r.data] || "Done.");
         document.getElementById("nb-found").innerHTML = ""; return load();
       }
+      if (act === "room-join" || act === "room-open") {
+        if (act === "room-join") {
+          const sel = (typeof ft !== "undefined" && ft.subject) || (typeof DATA !== "undefined" ? DATA.subjects[0] : null);
+          const r = await sb.from("room_members").upsert({ room_id: id, user_id: S.uid, subject: sel, last_seen: new Date().toISOString() }, { onConflict: "room_id,user_id" });
+          if (r.error) throw r.error;
+          S.members = [...S.members.filter(m => !(m.room_id === id && m.user_id === S.uid)), { room_id: id, user_id: S.uid, subject: sel, joined_at: new Date().toISOString(), last_seen: new Date().toISOString() }];
+        }
+        S.room = id; await syncClock(); render(); return;
+      }
+      if (act === "room-back") { S.room = null; render(); return; }
+      if (act === "room-leave") { await sb.from("room_members").delete().eq("room_id", id).eq("user_id", S.uid); S.members = S.members.filter(m => !(m.room_id === id && m.user_id === S.uid)); S.room = null; render(); return; }
+      if (act === "room-close") { if (!confirm("Close this room for everyone?")) return; const r = await sb.from("rooms").delete().eq("id", id); if (r.error) throw r.error; S.rooms = S.rooms.filter(x => x.id !== id); S.room = null; render(); return; }
+      if (act === "room-start") {
+        const rr = S.rooms.find(x => x.id === id), mins = (rr && rr.minutes) || 25;
+        const r = await sb.rpc("start_room", { r: id, mins }); if (r.error) throw r.error;
+        await syncClock(); await pollRoom(); say(`Started: ${mins} minutes for everyone in the room.`); return;
+      }
+      if (act === "ann-del") { const r = await sb.from("announcements").delete().eq("id", +id); if (r.error) throw r.error; S.sig = ""; await loadAnnouncements(); return load(); }
+      if (act === "notify-toggle") {
+        if (notifyOn()) { try { localStorage.setItem("orchard-notify", "off"); } catch (x) {} render(); return; }
+        const perm = await Notification.requestPermission();
+        if (perm === "granted") { try { localStorage.setItem("orchard-notify", "on"); } catch (x) {} say("Notifications are on."); }
+        render(); return;
+      }
+      if (act === "notify-test") { showNote("The Orchard", { body: "Notifications are working.", icon: "icon-192.png", tag: "test" }); return; }
       if (act === "revoke") { if (!confirm("Take this badge back?")) return; const r = await sb.from("awards").delete().eq("id", +id); if (r.error) throw r.error; say("Badge taken back."); S.sig = ""; return load(); }
     } catch (x) { say(x.message || "Something went wrong."); }
+  });
+  root.addEventListener("change", async e => {
+    if (e.target.id === "nb-room-subj" && S.room) {
+      const v = e.target.value;
+      await sb.from("room_members").update({ subject: v }).eq("room_id", S.room).eq("user_id", S.uid);
+      const m = S.members.find(x => x.room_id === S.room && x.user_id === S.uid); if (m) m.subject = v;
+    }
   });
   root.addEventListener("input", e => {
     if (e.target.id === "nb-note") { const l = document.getElementById("nb-left"); if (l) { l.textContent = 140 - e.target.value.length; l.classList.toggle("low", e.target.value.length > 120); } }
@@ -918,6 +1207,26 @@
       out.innerHTML = `<ul class="nb-list">${personRow(p, isF ? `<span class="o-dim o-small">Already friends</span>` : `<button class="primary" data-act="send" data-id="${p.id}">Send request</button>`)}</ul>`;
       return;
     }
+    if (id === "nb-room-new") {
+      e.preventDefault();
+      const name = e.target.name.value.trim().slice(0, 40); if (!name) return;
+      const btn = e.target.querySelector('[type="submit"]'); btn.disabled = true;
+      const r = await sb.from("rooms").insert({ owner_id: S.uid, name, minutes: newMins }).select().single();
+      if (r.error) { btn.disabled = false; say(r.error.message); return; }
+      const room = r.data;
+      await sb.from("room_members").insert({ room_id: room.id, user_id: S.uid, subject: e.target.subject.value });
+      S.rooms = [room, ...S.rooms]; S.members.push({ room_id: room.id, user_id: S.uid, subject: e.target.subject.value, joined_at: new Date().toISOString(), last_seen: new Date().toISOString() });
+      S.room = room.id; await syncClock(); render(); say("Room open. Your friends can join from Study rooms.");
+      return;
+    }
+    if (id === "nb-ann") {
+      e.preventDefault();
+      const body = e.target.body.value.trim(); if (!body) return;
+      const days = +e.target.days.value;
+      const r = await sb.from("announcements").insert({ body, tone: e.target.tone.value, created_by: S.uid, expires_at: days ? new Date(Date.now() + days * 864e5).toISOString() : null });
+      if (r.error) { say(r.error.message); return; }
+      say("Announcement posted."); S.sig = ""; await loadAnnouncements(); return load();
+    }
     if (id === "nb-award") {
       e.preventDefault();
       if (!awardTarget) return;
@@ -935,6 +1244,7 @@
     const next = (ms.data || []).reverse();
     const changed = force || JSON.stringify(next.map(m => [m.id, !!m.read_at])) !== JSON.stringify(S.messages.map(m => [m.id, !!m.read_at]));
     S.messages = next;
+    if (changed) checkAlerts();
     if (changed && S.seg === "messages" && location.hash === "#social") {
       const draft = document.getElementById("nb-dm-text"), txt = draft ? draft.value : "", focused = document.activeElement === draft;
       render();
@@ -954,15 +1264,25 @@
       load();
       poll = setInterval(() => { if (document.visibilityState === "visible" && !document.querySelector(".nb-editor:focus-within, #nb-compose:focus-within, .nb-admin:focus-within, .nb-dm:focus-within")) load(true); }, 30000);
       fast = setInterval(() => { if (document.visibilityState === "visible" && S.seg === "messages") refreshMessages(); }, 6000);
-    } else stopPlaza();
+    } else { stopPlaza(); stopRoomTimers(); }
   }
   addEventListener("hashchange", onRoute);
   onRoute();
   setTimeout(() => { if (!S.loaded) load(true); }, 4000);
+  setInterval(() => { if (location.hash !== "#social" && document.visibilityState === "visible" && S.profile) load(true); }, 60000);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && S.profile && !S.loading) load(true); });
   setInterval(() => { if (location.hash !== "#social" && document.visibilityState === "visible" && S.profile) refreshMessages(); }, 45000);
 
   window.orchardSocial = {
     badge: () => { if (!S.profile) return ""; const n = incoming().length + unreadFrom(); return n ? String(n) : ""; },
-    avatar, badgeSVG
+    avatar, badgeSVG,
+    cardDays: () => ({ ...cardLog.days }),
+    rank: () => {
+      if (!S.profile) return null;
+      const people = [{ ...S.profile, stats: S.profile.share_stats ? myStats() : S.profile.stats }, ...friends().filter(p => !hidden(p))];
+      if (people.length < 2) return null;
+      const sorted = people.sort((a, b) => ((b.stats && b.stats.weekMins) || 0) - ((a.stats && a.stats.weekMins) || 0));
+      return { pos: sorted.findIndex(p => p.id === S.uid) + 1, of: sorted.length };
+    }
   };
 })();

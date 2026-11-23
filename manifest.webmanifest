@@ -1,0 +1,23 @@
+{
+  "name": "The Orchard",
+  "short_name": "Orchard",
+  "description": "Your GCSE revision planner: timetable, topics, grades, study time and friends.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#080907",
+  "theme_color": "#080907",
+  "orientation": "any",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Study log", "url": "./#study-log", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "Social", "url": "./#social", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] },
+    { "name": "AI tutor", "url": "./#ai", "icons": [{ "src": "icon-192.png", "sizes": "192x192" }] }
+  ]
+}
