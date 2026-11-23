@@ -341,14 +341,15 @@ const O_SUBJECT_COLOURS = {
   const original = renderSubject;
   renderSubject = function (def) {
     const out = original.apply(this, arguments);
+    if (def && def.stale) return out;
     try { ensureChrome(def); renderRail(def); } catch (e) { console.error(e); }
     return out;
   };
-  SUBJECTS.forEach(def => { try { ensureChrome(def); renderRail(def); } catch (e) {} });
+  SUBJECTS.forEach(def => { try { ensureChrome(def); if (!def.stale) renderRail(def); } catch (e) {} });
   // Refresh when sessions or ratings change elsewhere
   addEventListener("hashchange", () => {
     const def = SUBJECTS.find(d => "#" + d.view === location.hash);
-    if (def) renderRail(def);
+    if (def && !def.stale) renderRail(def);
   });
 })();
 

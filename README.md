@@ -85,10 +85,16 @@ The Orchard can be installed on phones and computers. On desktop Chrome or Edge,
 - **What should I do now? → Plan my day**: choose 1 to 4 hours and get a set of focused sessions across subjects, chosen by exam dates and weak topics, with breaks. **Start** runs the focus timer (which logs the session), and **Add to calendar** saves the plan.
 - **Weekly recap**: shown on Home from Monday to Wednesday (or from **Weekly recap** next to Insights). It covers time studied versus the week before, days studied, flashcards reviewed, where your time went, your rank among friends and what's coming up.
 
+## Speed
+- The app's code and styles live in their own files (`app.js`, `app.css` and so on) rather than inside `index.html`. Each is linked with a fingerprint, e.g. `app.js?v=1a2b3c4d5e`, so a device keeps it until it actually changes. After an update, people only download the files that changed.
+- Subject pages are drawn when you open them, not all at start-up.
+- **After editing any `.js` or `.css` file, run** `python3 tools/stamp.py` and commit what it changes. If you forget, people may keep the old version of that file.
+
 ## Files
 | File | What it is |
 |---|---|
-| `index.html` | The Orchard app |
+| `index.html` | The Orchard app's page layout |
+| `app.js`, `app.css` | The Orchard app's code and styles (all subjects, study log, calendar and so on) |
 | `login.html` | Sign in, create account, reset password |
 | `account.js` | Connects the app's saving to Supabase, and adds the Account panel |
 | `account.css` | Styles for the Account panel |
@@ -102,3 +108,4 @@ The Orchard can be installed on phones and computers. On desktop Chrome or Edge,
 | `supabase-social-4.sql` | Study rooms, announcements and admin stats |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | Installable app: manifest, offline support and icons |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |
+| `tools/stamp.py` | Fingerprints the files so browsers can cache them (see Speed below) |
