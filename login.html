@@ -7,72 +7,100 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Sora:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: light;
-  --bg: #f6f5ef; --ink: #1f2516; --ink-soft: rgba(31,37,22,.74); --ink-faint: rgba(31,37,22,.52);
-  --line: rgba(60,72,30,.14); --card: rgba(255,255,251,.78); --edge: rgba(85,100,45,.18);
-  --acc: #556b2f; --acc-ink: #fff; --grad: linear-gradient(135deg, #3c4d20 0%, #556b2f 55%, #74884a 100%);
-  --soft: rgba(85,107,47,.1); --err: #b23a2e;
-  --display: "Sora", system-ui, -apple-system, sans-serif;
-  --body: "Manrope", system-ui, -apple-system, sans-serif;
+  --bg: #f6f5ef; --panel: #eeede4; --surface: #ffffff; --ink: #1f2516; --ink-soft: rgba(31,37,22,.72); --ink-faint: rgba(31,37,22,.5);
+  --border: rgba(31,37,22,.11); --border-strong: rgba(31,37,22,.2);
+  --acc: #556b2f; --acc-ink: #fff; --acc-soft: rgba(85,107,47,.14); --err: #b23a2e; --ok-bg: rgba(85,107,47,.09);
+  --font: "Geist", "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
-    --bg: #0f110c; --ink: #eef0e6; --ink-soft: rgba(238,240,230,.74); --ink-faint: rgba(238,240,230,.5);
-    --line: rgba(200,215,160,.12); --card: rgba(26,30,20,.78); --edge: rgba(180,200,130,.16);
-    --acc: #a3b07a; --acc-ink: #10130b; --grad: linear-gradient(135deg, #7f9150 0%, #a3b07a 60%, #c4cf9c 100%);
-    --soft: rgba(163,176,122,.12); --err: #ff8f84;
+    --bg: #101209; --panel: #15180f; --surface: #1a1d14; --ink: #eef0e6; --ink-soft: rgba(238,240,230,.72); --ink-faint: rgba(238,240,230,.48);
+    --border: rgba(255,255,255,.09); --border-strong: rgba(255,255,255,.16);
+    --acc: #a3b07a; --acc-ink: #10130b; --acc-soft: rgba(163,176,122,.18); --err: #ff8f84; --ok-bg: rgba(163,176,122,.1);
   }
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; }
-body {
-  margin: 0; min-height: 100%; display: grid; place-items: center; padding: 32px 16px;
-  background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body);
-  background-image: radial-gradient(60vmax 50vmax at 15% 0%, var(--soft), transparent 70%), radial-gradient(50vmax 40vmax at 100% 100%, var(--soft), transparent 70%);
-}
-.wrap { width: 100%; max-width: 420px; }
-.brand { text-align: center; margin-bottom: 28px; }
-.mark { display: inline-block; width: 44px; height: 44px; margin-bottom: 14px; }
-h1 { margin: 0; font: 300 2.4rem/1.1 var(--display); letter-spacing: -.02em; }
-.tag { margin: 8px 0 0; color: var(--ink-faint); font-size: .95rem; }
-.card { padding: 28px 24px 24px; border: 1px solid var(--edge); border-radius: 28px; background: var(--card); backdrop-filter: blur(20px) saturate(140%); -webkit-backdrop-filter: blur(20px) saturate(140%); box-shadow: 0 20px 60px -30px rgba(31,37,22,.35); }
-.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin-bottom: 24px; border-radius: 999px; background: var(--soft); }
-.tabs button { padding: 10px; border: 0; border-radius: 999px; background: transparent; color: var(--ink-soft); font: 600 .92rem var(--body); cursor: pointer; }
-.tabs button[aria-selected="true"] { background: var(--card); color: var(--ink); box-shadow: 0 2px 10px -4px rgba(0,0,0,.25); }
-form { display: grid; gap: 16px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 var(--font); -webkit-font-smoothing: antialiased; letter-spacing: -.003em; }
+.split { min-height: 100%; display: grid; grid-template-columns: 1fr; }
+.pitch { display: none; }
+.auth { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 40px 16px; }
+.auth-inner { width: 100%; max-width: 380px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1rem; letter-spacing: -.01em; color: var(--ink); text-decoration: none; }
+.logo svg { width: 28px; height: 28px; flex: none; }
+.auth .logo { margin-bottom: 28px; }
+h1 { margin: 0 0 6px; font-size: 1.55rem; font-weight: 600; letter-spacing: -.025em; line-height: 1.2; }
+.lede { margin: 0 0 24px; color: var(--ink-soft); }
+.card { padding: 0; }
+.tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; margin-bottom: 22px; border-radius: 9px; background: var(--panel); border: 1px solid var(--border); }
+.tabs[hidden] { display: none; }
+.tabs button { height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--ink-soft); font: 500 .875rem var(--font); cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 0 0 1px var(--border); }
+form { display: grid; gap: 14px; }
 form[hidden] { display: none; }
 label { display: grid; gap: 6px; }
-label span { font-size: .84rem; color: var(--ink-faint); letter-spacing: .01em; }
-input { width: 100%; padding: 13px 14px; border: 1px solid var(--line); border-radius: 14px; background: transparent; color: var(--ink); font: 500 1rem var(--body); outline: none; transition: border-color .2s, box-shadow .2s; }
-input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px var(--soft); }
-.primary { margin-top: 4px; padding: 14px; border: 0; border-radius: 999px; background: var(--grad); color: var(--acc-ink); font: 600 1rem var(--body); cursor: pointer; transition: transform .15s, opacity .2s; }
-.primary:active { transform: scale(.98); }
+label span { font-size: .82rem; font-weight: 500; color: var(--ink-soft); }
+input { width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border-strong); border-radius: 8px; background: var(--surface); color: var(--ink); font: 400 .95rem var(--font); outline: none; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: border-color .12s, box-shadow .12s; }
+input:focus { border-color: var(--acc); box-shadow: 0 0 0 3px var(--acc-soft); }
+input::placeholder { color: var(--ink-faint); }
+.primary { height: 40px; margin-top: 4px; border: 0; border-radius: 8px; background: var(--acc); color: var(--acc-ink); font: 600 .92rem var(--font); cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.1), inset 0 1px 0 rgba(255,255,255,.12); transition: filter .15s; }
+.primary:hover { filter: brightness(1.08); }
 .primary:disabled { opacity: .55; cursor: progress; }
-.err { margin: 0; color: var(--err); font-size: .9rem; }
+.err { margin: 0; color: var(--err); font-size: .875rem; }
 .err:empty { display: none; }
-.note { margin: 18px 0 0; text-align: center; color: var(--ink-faint); font-size: .86rem; }
-.note.ok { color: var(--acc); }
-.link { justify-self: center; padding: 4px; border: 0; background: none; color: var(--ink-soft); font: 500 .9rem var(--body); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
-.link:hover { color: var(--ink); }
-.msg { margin: 0; color: var(--ink-soft); font-size: .95rem; }
-.ok-box { padding: 14px 16px; border-radius: 16px; background: var(--soft); color: var(--ink); font-size: .95rem; }
+.link { justify-self: center; padding: 2px; border: 0; background: none; color: var(--ink-soft); font: 500 .875rem var(--font); cursor: pointer; }
+.link:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.msg { margin: 0; color: var(--ink-soft); font-size: .92rem; }
+.ok-box { margin: 0; padding: 12px 14px; border-radius: 8px; background: var(--ok-bg); border: 1px solid var(--acc-soft); color: var(--ink); font-size: .9rem; }
 .ok-box:empty { display: none; }
-.setup h2 { margin: 0 0 8px; font: 500 1.2rem var(--display); }
-.setup p { margin: 0 0 10px; color: var(--ink-soft); font-size: .95rem; }
-code { font-size: .88em; padding: 1px 5px; border-radius: 6px; background: var(--soft); }
+.note { margin: 18px 0 0; text-align: center; color: var(--ink-faint); font-size: .85rem; }
+.note.ok { color: var(--acc); }
+.setup h2 { margin: 0 0 8px; font-size: 1.1rem; font-weight: 600; }
+.setup p { margin: 0 0 10px; color: var(--ink-soft); font-size: .92rem; }
+code { font-size: .88em; padding: 1px 5px; border-radius: 5px; background: var(--panel); border: 1px solid var(--border); }
+.legal { margin-top: 32px; color: var(--ink-faint); font-size: .78rem; text-align: center; }
+@media (min-width: 960px) {
+  .split { grid-template-columns: minmax(420px, 1fr) minmax(480px, 1fr); }
+  .pitch { display: flex; flex-direction: column; justify-content: space-between; padding: 48px clamp(40px, 5vw, 80px); background: var(--panel); border-right: 1px solid var(--border); }
+  .auth .logo { display: none; }
+  .pitch h2 { margin: 0 0 14px; max-width: 16ch; font-size: clamp(2rem, 1.2rem + 1.8vw, 2.9rem); font-weight: 600; letter-spacing: -.035em; line-height: 1.08; }
+  .pitch .sub { margin: 0 0 36px; max-width: 46ch; color: var(--ink-soft); font-size: 1.02rem; }
+  .feats { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; max-width: 520px; }
+  .feats li { display: grid; grid-template-columns: 36px 1fr; gap: 14px; align-items: start; }
+  .feats .ic { width: 36px; height: 36px; border-radius: 9px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+  .feats .ic svg { width: 18px; height: 18px; fill: none; stroke: var(--acc); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+  .feats b { display: block; font-weight: 600; font-size: .95rem; }
+  .feats span { color: var(--ink-soft); font-size: .9rem; }
+  .pitch-foot { color: var(--ink-faint); font-size: .8rem; }
+}
 </style>
 </head>
 <body>
-<main class="wrap">
-  <div class="brand">
-    <svg class="mark" viewBox="0 0 48 48" aria-hidden="true"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3c4d20"/><stop offset="1" stop-color="#8da05c"/></linearGradient></defs><circle cx="24" cy="27" r="16" fill="url(#g)"/><path d="M24 11c0-4 2.5-6.5 6-7" stroke="#3c4d20" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M25 11c3-4 8-4 10-2-3 3-7 3-10 2z" fill="#74884a"/></svg>
-    <h1>The Orchard</h1>
-    <p class="tag">Your revision, grades and study time, in one place.</p>
-  </div>
+<main class="split">
+  <section class="pitch" aria-label="About The Orchard">
+    <a class="logo" href="./"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#556b2f"/><path d="M14 10.2c-1.8-1.4-6.4-1.4-7 3.4-.6 4.1 2.6 8.6 4.9 8.6 1 0 1.3-.6 2.1-.6s1.1.6 2.1.6c2.3 0 5.5-4.5 4.9-8.6-.6-4.8-5.2-4.8-7-3.4zM14 10V7.2c0-1.1.7-2.3 1.8-2.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>The Orchard</a>
+    <div>
+      <h2>Revise with a plan, not a panic.</h2>
+      <p class="sub">The Orchard brings your GCSE timetable, topics, grades and study time into one calm place, so you always know what to do next.</p>
+      <ul class="feats">
+        <li><span class="ic"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="15" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg></span><div><b>Your real exam timetable</b><span>Every paper, with a live countdown and an exam-day checklist.</span></div></li>
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M5 20v-7M12 20V5M19 20v-10"/><path d="M3 20h18"/></svg></span><div><b>See where you stand</b><span>Track grades, mocks and confidence for each topic in all ten subjects.</span></div></li>
+        <li><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3.5l1.9 5.1 5.1 1.9-5.1 1.9L12 17.5l-1.9-5.1L5 10.5l5.1-1.9z"/></svg></span><div><b>A tutor when you're stuck</b><span>Explanations, quizzes and examiner-style marking, any time.</span></div></li>
+      </ul>
+    </div>
+    <p class="pitch-foot">Your data is private to your account and syncs across your devices.</p>
+  </section>
+
+  <section class="auth">
+   <div class="auth-inner">
+    <a class="logo" href="./"><svg viewBox="0 0 28 28" aria-hidden="true"><rect width="28" height="28" rx="7" fill="#556b2f"/><path d="M14 10.2c-1.8-1.4-6.4-1.4-7 3.4-.6 4.1 2.6 8.6 4.9 8.6 1 0 1.3-.6 2.1-.6s1.1.6 2.1.6c2.3 0 5.5-4.5 4.9-8.6-.6-4.8-5.2-4.8-7-3.4zM14 10V7.2c0-1.1.7-2.3 1.8-2.6" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>The Orchard</a>
+    <h1 id="auth-title">Welcome back</h1>
+    <p class="lede" id="auth-lede">Sign in to pick up where you left off.</p>
 
   <div class="card setup" id="setup" hidden>
     <h2>Almost there</h2>
@@ -104,7 +132,6 @@ code { font-size: .88em; padding: 1px 5px; border-radius: 6px; background: var(-
     </form>
 
     <form id="f-forgot" novalidate hidden>
-      <p class="msg">Enter your email and we’ll send you a link to set a new password.</p>
       <label><span>Email</span><input type="email" name="email" autocomplete="username" required></label>
       <p class="err" role="alert"></p>
       <p class="ok-box" role="status"></p>
@@ -113,13 +140,15 @@ code { font-size: .88em; padding: 1px 5px; border-radius: 6px; background: var(-
     </form>
 
     <form id="f-reset" novalidate hidden>
-      <p class="msg">Choose a new password for your account.</p>
       <label><span>New password</span><input type="password" name="password" autocomplete="new-password" minlength="8" required placeholder="At least 8 characters"></label>
       <p class="err" role="alert"></p>
       <button class="primary" type="submit">Save new password</button>
     </form>
   </div>
   <p class="note" id="note"></p>
+  <p class="legal">© <span id="yr"></span> The Orchard</p>
+   </div>
+  </section>
 </main>
 <script src="config.js"></script>
 <script src="supabase.js"></script>
@@ -128,6 +157,7 @@ code { font-size: .88em; padding: 1px 5px; border-radius: 6px; background: var(-
   var cfg = window.ORCHARD_CONFIG || {};
   var $ = function (id) { return document.getElementById(id); };
   var note = $("note");
+  $("yr").textContent = new Date().getFullYear();
   function setNote(t, ok) { note.textContent = t; note.className = ok ? "note ok" : "note"; }
 
   if (!window.supabase || !/^https:\/\//.test(cfg.supabaseUrl || "") || !cfg.supabaseKey || /PASTE_/.test(cfg.supabaseKey + cfg.supabaseUrl)) {
@@ -145,7 +175,9 @@ code { font-size: .88em; padding: 1px 5px; border-radius: 6px; background: var(-
   var forms = { in: $("f-in"), up: $("f-up"), forgot: $("f-forgot"), reset: $("f-reset") };
   var tabs = { in: $("t-in"), up: $("t-up") };
 
+  var TITLES = { in: ["Welcome back", "Sign in to pick up where you left off."], up: ["Create your account", "It takes less than a minute. Free to use."], forgot: ["Reset your password", "We’ll email you a link to choose a new one."], reset: ["Choose a new password", "Use at least 8 characters."] };
   function show(k) {
+    $("auth-title").textContent = TITLES[k][0]; $("auth-lede").textContent = TITLES[k][1];
     Object.keys(forms).forEach(function (n) { forms[n].hidden = n !== k; });
     $("tabs").hidden = k === "forgot" || k === "reset";
     Object.keys(tabs).forEach(function (n) { tabs[n].setAttribute("aria-selected", String(n === k)); });

@@ -6,7 +6,7 @@
 <title>The Orchard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Manrope:wght@400;500;600;700&family=Sora:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script>
 /* Settings are applied before the page draws, so nothing flashes */
 (function () {
@@ -27,7 +27,7 @@
   d.style.fontSize = sizes[p.size] || "100%";
   var sys = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (p.motion === "reduce" || (p.motion !== "full" && sys)) d.classList.add("reduce-motion");
-  if (p.fx3d !== "off") d.classList.add("fx3d");
+  if (p.fx3d === "on") d.classList.add("fx3d");
 })();
 </script>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -3086,8 +3086,9 @@ a:focus-visible, button:focus-visible, .input:focus-visible { outline: 2px solid
 body.is-fs #fs-btn .fs-off { display: inline; }
 #fs-btn:hover svg { transform: scale(1.08); }
 </style>
+<link rel="stylesheet" href="ui.css">
 </head>
-<body>
+<body id="o">
 
 <div class="ambient" aria-hidden="true">
   <div class="orb"></div><div class="orb b"></div><div class="orb c"></div>
@@ -3640,7 +3641,7 @@ body.is-fs #fs-btn .fs-off { display: inline; }
     <div class="pref-group">
       <h3>Font</h3>
       <div class="font-cards">
-        <button type="button" class="font-card fc-default" data-pref="font" data-val="default" aria-pressed="false"><span class="fc-big">Aa</span><b>Default</b><span>Sora and Manrope</span></button>
+        <button type="button" class="font-card fc-default" data-pref="font" data-val="default" aria-pressed="false"><span class="fc-big">Aa</span><b>Default</b><span>Geist throughout</span></button>
         <button type="button" class="font-card fc-editorial" data-pref="font" data-val="editorial" aria-pressed="false"><span class="fc-big">Aa</span><b>Editorial</b><span>Playfair Display headings, Inter text</span></button>
         <button type="button" class="font-card fc-clean" data-pref="font" data-val="clean" aria-pressed="false"><span class="fc-big">Aa</span><b>Clean</b><span>Inter throughout</span></button>
       </div>
@@ -11852,7 +11853,7 @@ initStore();
    SETTINGS — theme, text size and motion (remembered on this device)
    ============================================================ */
 const PREFS_KEY = "orchard-prefs";
-const prefs = { theme: "olive-white", size: "m", motion: "auto", fx3d: "on", font: "default" };
+const prefs = { theme: "olive-white", size: "m", motion: "auto", fx3d: "off", font: "default" };
 const THEME_TONES = { "olive-white": "daylight", "olive-noir": "tinted", "champagne": "tinted", "ivory-navy": "daylight", "daylight": "daylight", "rouge-noir": "tinted", "blue-coral": "tinted", "cognac": "tinted", "anthracite": "tinted", "white-sand": "daylight" };
 const THEME_META = { "olive-white": "#f6f5ef", "olive-noir": "#070806", champagne: "#0a0907", "ivory-navy": "#f7f5f0", "black-glass": "#000000", daylight: "#f4f4f2", "rouge-noir": "#0a0405", "blue-coral": "#020b0a", cognac: "#0b0705", anthracite: "#111114", "white-sand": "#e9e5df" };
 try {
@@ -12676,7 +12677,7 @@ const SHORT = { 'English Literature': 'Eng Lit', 'Religious Studies': 'RS', 'Fur
   svg.insertAdjacentHTML('afterbegin', `<circle cx="120" cy="120" r="104" fill="url(#hud-core)"/><g class="avg-ticks">${t}</g><circle class="avg-orbit" cx="120" cy="120" r="96" pathLength="100"/><circle class="avg-orbit two" cx="120" cy="120" r="88" pathLength="100"/>`);
   $('avg-arc').setAttribute('stroke', 'url(#hud-h)');
   const ring = document.querySelector('.avg-ring');
-  ring.insertAdjacentHTML('beforeend', '<span class="avg-cap">GRADE</span>');
+  ring.insertAdjacentHTML('beforeend', '<span class="avg-cap">Average grade</span>');
 })();
 const _renderHomeAvg = renderHomeAvg;
 renderHomeAvg = function () {
@@ -12856,7 +12857,7 @@ function fx3dLoop() {
   } else if (!run && fx.raf) { cancelAnimationFrame(fx.raf); fx.raf = 0; }
 }
 function syncFx3d() {
-  fx.on = prefs.fx3d !== 'off';
+  fx.on = prefs.fx3d === 'on';
   document.documentElement.classList.toggle('fx3d', fx.on);
   if (!fx.cv) return;
   fx.cv.hidden = !fx.on;
@@ -14921,6 +14922,7 @@ renderPapers();
   sync();
 })();
 </script>
+<script src="ui.js"></script>
 <script src="ai-chat.js"></script>
 </body>
 </html>
