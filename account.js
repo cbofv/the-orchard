@@ -1,29 +1,67 @@
-/* The Orchard — account bridge.
+/* The Orchard — account bridge (Supabase).
    The app saves through window.claude.use("db") / use("user"). This file
-   provides those, backed by this site's server and the signed-in account,
-   and adds an Account panel to Settings. */
+   provides those, backed by Supabase and the signed-in account, and adds
+   an Account panel to Settings. */
 (function () {
   "use strict";
 
-  /* ---------- server calls ---------- */
-  function toLogin() { location.replace("/login"); }
-  async function call(method, url, body) {
-    const r = await fetch(url, {
-      method,
-      credentials: "same-origin",
-      headers: body !== undefined ? { "Content-Type": "application/json", "X-Orchard": "1" } : { "X-Orchard": "1" },
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-    });
-    if (r.status === 401 && !/\/api\/(password|delete-account)$/.test(url)) { toLogin(); throw new Error("Signed out"); }
-    let j = {};
-    try { j = await r.json(); } catch (e) {}
-    if (!r.ok) throw Object.assign(new Error(j.error || "Something went wrong."), { status: r.status });
-    return j;
-  }
-  const enc = encodeURIComponent;
-  const clone = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
+  const cfg = window.ORCHARD_CONFIG || {};
+  const toLogin = q => location.replace("login.html" + (q || ""));
+  if (!window.supabase || !/^https:\/\//.test(cfg.supabaseUrl || "") || !cfg.supabaseKey || /PASTE_/.test(cfg.supabaseKey + cfg.supabaseUrl)) { toLogin(); return; }
 
-  const mePromise = call("GET", "/api/me").then(j => j.user);
+  const sb = window.supabase.createClient(cfg.supabaseUrl, cfg.supabaseKey);
+  const clone = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
+  const toMe = u => ({ id: u.id, email: u.email, name: (u.user_metadata && u.user_metadata.name) || u.email.split("@")[0] });
+
+  const mePromise = sb.auth.getSession().then(({ data }) => {
+    if (!data.session) { toLogin(); throw new Error("Signed out"); }
+    return toMe(data.session.user);
+  });
+  sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") toLogin(); });
+
+  /* ---------- talking to the docs table ---------- */
+  let uid = null;
+  const prefix = () => `data/users/${uid}/`;
+  function rel(path) {
+    if (!path.startsWith(prefix())) throw new Error("Bad path");
+    return path.slice(prefix().length);
+  }
+  async function check(res) {
+    if (res.error) {
+      if (res.status === 401 || /JWT/i.test(res.error.message || "")) {
+        const { data } = await sb.auth.getSession();
+        if (!data.session) toLogin();
+      }
+      throw new Error(res.error.message || "Couldn’t reach your account.");
+    }
+    return res.data;
+  }
+  async function allRows(likePattern) {
+    const out = [];
+    for (let from = 0; ; from += 1000) {
+      let qy = sb.from("docs").select("path,data").eq("user_id", uid).order("path").range(from, from + 999);
+      if (likePattern) qy = qy.like("path", likePattern);
+      const rows = await check(await qy);
+      out.push(...rows);
+      if (rows.length < 1000) return out;
+    }
+  }
+  async function fetchCol(path) {
+    const r = rel(path);
+    const like = r.replace(/[\\%_]/g, c => "\\" + c) + "/%";
+    const rows = await allRows(like);
+    return { docs: rows.filter(x => !x.path.slice(r.length + 1).includes("/")).map(x => ({ id: x.path.slice(r.length + 1), data: x.data })) };
+  }
+  async function fetchDoc(path) {
+    const row = await check(await sb.from("docs").select("data").eq("user_id", uid).eq("path", rel(path)).maybeSingle());
+    return row ? { exists: true, data: row.data } : { exists: false };
+  }
+  async function putDoc(path, data) {
+    await check(await sb.from("docs").upsert({ user_id: uid, path: rel(path), data, updated_at: new Date().toISOString() }, { onConflict: "user_id,path" }));
+  }
+  async function delDoc(path) {
+    await check(await sb.from("docs").delete().eq("user_id", uid).eq("path", rel(path)));
+  }
 
   /* ---------- live-ish document store ---------- */
   const subs = new Map(); // key -> { kind, path, cbs:Set, state, sig }
@@ -39,7 +77,7 @@
   }
   async function refresh(sub, force) {
     try {
-      const state = await call("GET", `/api/${sub.kind}?path=${enc(sub.path)}`);
+      const state = sub.kind === "col" ? await fetchCol(sub.path) : await fetchDoc(sub.path);
       if (pending && !force) return;
       const sig = JSON.stringify(state);
       if (!force && sig === sub.sig) return;
@@ -59,7 +97,7 @@
     return () => sub.cbs.delete(entry);
   }
 
-  /* Apply a write to what's on screen at once, then save it */
+  /* Show a change at once, then save it */
   function applyLocal(path, data) {
     const doc = subs.get("doc:" + path);
     if (doc && doc.state) { doc.state = data === null ? { exists: false } : { exists: true, data: clone(data) }; doc.sig = JSON.stringify(doc.state); notify(doc); }
@@ -74,13 +112,9 @@
   async function write(path, data) {
     pending++;
     applyLocal(path, data);
-    try {
-      if (data === null) await call("DELETE", `/api/doc?path=${enc(path)}`);
-      else await call("PUT", `/api/doc?path=${enc(path)}`, { data });
-    } catch (e) {
-      subs.forEach(s => refresh(s, true));
-      throw e;
-    } finally { pending--; }
+    try { if (data === null) await delDoc(path); else await putDoc(path, data); }
+    catch (e) { subs.forEach(s => refresh(s, true)); throw e; }
+    finally { pending--; }
   }
   const newId = () => Date.now().toString(36) + Array.from(crypto.getRandomValues(new Uint8Array(8)), b => (b % 36).toString(36)).join("");
 
@@ -88,9 +122,9 @@
     return {
       id: path.split("/").pop(), path,
       set: data => write(path, data),
-      update: async patch => { const r = await call("GET", `/api/doc?path=${enc(path)}`); return write(path, { ...(r.data || {}), ...patch }); },
+      update: async patch => { const r = await fetchDoc(path); return write(path, { ...(r.data || {}), ...patch }); },
       delete: () => write(path, null),
-      get: async () => snapOf("doc", path, await call("GET", `/api/doc?path=${enc(path)}`)),
+      get: async () => snapOf("doc", path, await fetchDoc(path)),
       onSnapshot: (next, error) => subscribe("doc", path, next, error),
     };
   }
@@ -99,7 +133,7 @@
       path,
       doc: id => docRef(`${path}/${id || newId()}`),
       add: async data => { const ref = docRef(`${path}/${newId()}`); await ref.set(data); return ref; },
-      get: async () => snapOf("col", path, await call("GET", `/api/col?path=${enc(path)}`)),
+      get: async () => snapOf("col", path, await fetchCol(path)),
       onSnapshot: (next, error) => subscribe("col", path, next, error),
     };
   }
@@ -114,6 +148,7 @@
   window.claude = window.claude || {};
   window.claude.use = async function (name) {
     const me = await mePromise;
+    uid = me.id;
     if (name === "db") return dbApi;
     if (name === "user") return { id: async () => me.id, name: async () => me.name, email: async () => me.email };
     return null;
@@ -121,13 +156,37 @@
 
   /* ---------- account panel ---------- */
   const DATA_KEYS = ["orchard-sessions", "orchard-events", "orchard-grades", "orchard-papers", "orchard-ratings", "orchard-syl-extra", "orchard-goal", "orchard-targets", "orchard-timer", "orchard-last"];
+  const clearLocal = () => { try { DATA_KEYS.forEach(k => localStorage.removeItem(k)); } catch (e) {} };
   const escH = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const say = msg => (typeof window.toast === "function" ? window.toast(msg) : alert(msg));
 
+  async function verifyPassword(email, password) {
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(/invalid/i.test(error.message) ? "That password isn’t right." : error.message);
+  }
   async function signOut() {
-    try { await call("POST", "/api/logout", {}); } catch (e) {}
-    try { DATA_KEYS.forEach(k => localStorage.removeItem(k)); } catch (e) {}
-    location.replace("/login");
+    clearLocal();
+    try { await sb.auth.signOut(); } catch (e) {}
+    toLogin();
+  }
+  async function exportData() {
+    const rows = await allRows(null);
+    const blob = new Blob([JSON.stringify({ app: "the-orchard", version: 1, exportedAt: new Date().toISOString(), docs: rows.map(r => ({ path: r.path, data: r.data })) }, null, 1)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `orchard-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  }
+  async function importData(b) {
+    if (!b || b.app !== "the-orchard" || !Array.isArray(b.docs)) throw new Error("That file isn’t an Orchard backup.");
+    const rows = b.docs
+      .filter(d => typeof d.path === "string" && /^[\w\-]+(\/[\w\-]+)*$/.test(d.path) && d.path.length <= 300 && d.data && typeof d.data === "object")
+      .map(d => ({ user_id: uid, path: d.path, data: d.data, updated_at: new Date().toISOString() }));
+    for (let i = 0; i < rows.length; i += 200) {
+      await check(await sb.from("docs").upsert(rows.slice(i, i + 200), { onConflict: "user_id,path" }));
+    }
+    return rows.length;
   }
 
   function panelHTML(me) {
@@ -199,7 +258,7 @@
     toggles.forEach(t => t.addEventListener("click", () => show(t.dataset.acct)));
     g.querySelectorAll("[data-cancel]").forEach(b => b.addEventListener("click", () => show(null)));
     g.querySelector("#acct-signout").addEventListener("click", signOut);
-    g.querySelector("#acct-export").addEventListener("click", () => { location.href = "/api/export"; });
+    g.querySelector("#acct-export").addEventListener("click", () => exportData().catch(e => say(e.message)));
 
     const handle = (name, fn) => {
       const f = g.querySelector(`[data-form="${name}"]`);
@@ -211,14 +270,21 @@
       });
     };
     handle("name", async f => {
-      const j = await call("POST", "/api/profile", { name: f.name.value });
-      me.name = j.user.name;
+      const name = f.name.value.trim().replace(/\s+/g, " ").slice(0, 60);
+      if (!name) throw new Error("Please enter your name.");
+      const { error } = await sb.auth.updateUser({ data: { name } });
+      if (error) throw new Error(error.message);
+      me.name = name;
       g.querySelector("#acct-name").textContent = me.name;
       g.querySelector(".acct-avatar").textContent = (me.name[0] || "?").toUpperCase();
       greet(me); show(null); say("Name updated.");
     });
     handle("password", async f => {
-      await call("POST", "/api/password", { current: f.current.value, next: f.next.value });
+      if (f.next.value.length < 8) throw new Error("Your new password needs at least 8 characters.");
+      await verifyPassword(me.email, f.current.value).catch(() => { throw new Error("Your current password isn’t right."); });
+      const { error } = await sb.auth.updateUser({ password: f.next.value });
+      if (error) throw new Error(error.message);
+      try { await sb.auth.signOut({ scope: "others" }); } catch (e) {}
       f.reset(); show(null); say("Password updated.");
     });
     handle("import", async f => {
@@ -226,14 +292,17 @@
       if (!file) throw new Error("Choose a backup file first.");
       let data;
       try { data = JSON.parse(await file.text()); } catch (e) { throw new Error("That file isn’t an Orchard backup."); }
-      const j = await call("POST", "/api/import", data);
-      say(`Restored ${j.imported} item${j.imported === 1 ? "" : "s"}. Reloading…`);
+      const n = await importData(data);
+      say(`Restored ${n} item${n === 1 ? "" : "s"}. Reloading…`);
       setTimeout(() => location.reload(), 900);
     });
     handle("delete", async f => {
-      await call("POST", "/api/delete-account", { password: f.password.value });
-      try { DATA_KEYS.forEach(k => localStorage.removeItem(k)); } catch (e) {}
-      location.replace("/login?deleted=1");
+      await verifyPassword(me.email, f.password.value);
+      const { error } = await sb.rpc("delete_my_account");
+      if (error) throw new Error(error.message);
+      clearLocal();
+      try { await sb.auth.signOut({ scope: "local" }); } catch (e) {}
+      toLogin("?deleted=1");
     });
   }
 

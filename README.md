@@ -1,54 +1,61 @@
-# The Orchard (website)
+# The Orchard
 
-The Orchard study planner as a website with its own accounts. Each person signs up with
-their name, email and password, and everything they log is saved to their account on the
-server. That includes sessions, exams, grades, past papers and revision progress, so it
-follows them to any device.
+The Orchard study planner as a free website with accounts.
 
-No packages to install. It needs **Node.js 22.13 or newer**.
+- **GitHub Pages** hosts the site.
+- **Supabase** handles sign-in and stores each person's data: study sessions, exams,
+  grades, past papers and revision progress. It all follows them to any device.
 
-## Run it
+## One-time setup
 
-```bash
-npm start
-```
+### 1. Create the Supabase project
+1. Sign up at supabase.com and click **New project**. Pick any name, set a database
+   password (you won't need it again), choose a region near you (e.g. London), and
+   create it.
+2. When it's ready, open **SQL Editor** → **New query**. Paste in everything from
+   [`supabase-setup.sql`](supabase-setup.sql) and click **Run**. You should see "Success".
 
-Then open http://localhost:3000. You'll be sent to the sign-in page. Choose **Create account** to begin.
+### 2. Connect the site to it
+1. In Supabase, find your **Project URL** and **publishable key** (older projects call it
+   the **anon** key). They're under **Project Settings → API Keys** and **Data API**, or
+   behind the **Connect** button at the top.
+2. On GitHub, open [`config.js`](config.js), click the pencil to edit, paste both values
+   between the quotes, and **Commit changes**.
 
-Settings:
+Both values are meant to be public. The rules in `supabase-setup.sql` make sure each
+person can only see and change their own data. **Never** paste the `service_role` or
+"secret" key anywhere.
 
-| Variable   | Default  | What it does                           |
-|------------|----------|----------------------------------------|
-| `PORT`     | `3000`   | Port to listen on                      |
-| `DATA_DIR` | `./data` | Where the SQLite database file is kept |
+### 3. Turn on GitHub Pages
+**Settings → Pages → Build and deployment**: Source **Deploy from a branch**, branch
+**main**, folder **/ (root)** → **Save**. After a minute the site is live at
+`https://<your-username>.github.io/the-orchard/`.
 
-## What's in it
+### 4. Tell Supabase the site's address
+In Supabase, go to **Authentication → URL Configuration**:
+- **Site URL**: `https://<your-username>.github.io/the-orchard/login.html`
+- **Redirect URLs**: add `https://<your-username>.github.io/the-orchard/**`
 
-- `server.js`: web server, accounts (scrypt-hashed passwords, 30-day sign-in cookies), and the data API
-- `public/app.html`: The Orchard itself, unchanged except for two lines that load the account bridge
-- `public/account.js`: connects the app's saving to the signed-in account, and adds the **Account** panel to Settings
-- `public/login.html`: sign-in and create-account page
-- `data/orchard.db`: created on first run. Back this file up.
+This makes the links in confirmation and password-reset emails take people back to your site.
 
-## Account features
+## Good to know
+- **Email confirmation:** by default, new accounts must click a link in an email before
+  they can sign in. Supabase's built-in email sender only sends a few emails per hour.
+  For a small group that's fine. To skip confirmation, turn off **Confirm email** under
+  **Authentication → Sign In / Providers → Email**.
+- **Free plan pausing:** Supabase pauses free projects that go unused for about a week.
+  If the site stops signing in, open the Supabase dashboard and click **Restore**.
+- **Forgot password** is on the sign-in page.
+- **In the app**, Settings (gear icon) → **Account** lets you change your name or
+  password, download or restore a backup, sign out, or delete your account.
 
-In the app, open **Settings** (the gear icon). The Account panel lets you:
-- see who you're signed in as, and sign out
-- change your name
-- change your password, which signs out your other devices
-- download all your data as a JSON backup, and restore from one
-- delete your account and all its data
-
-Security basics: passwords are never stored, only scrypt hashes. Sign-in cookies are
-HttpOnly and SameSite=Lax. Repeated wrong passwords are rate-limited. Each account can
-only read and write its own data.
-
-## Putting it online
-
-Any host that runs Node and keeps a persistent disk will work, for example a small VPS,
-Railway, Render or Fly.io. Point `DATA_DIR` at the persistent volume. Serve it over
-HTTPS (most hosts do this for you). When the host sets `X-Forwarded-Proto: https`, the
-cookie is marked `Secure` automatically.
-
-There's no "forgot password" email yet, because that needs an email-sending service.
-Until one is added, an account whose password is lost can't be recovered.
+## Files
+| File | What it is |
+|---|---|
+| `index.html` | The Orchard app |
+| `login.html` | Sign in, create account, reset password |
+| `account.js` | Connects the app's saving to Supabase, and adds the Account panel |
+| `account.css` | Styles for the Account panel |
+| `config.js` | Your Supabase URL and key (**edit this**) |
+| `supabase.js` | Supabase's browser library (v2.117.2), kept in the repo so the site has no outside dependencies |
+| `supabase-setup.sql` | Run once in Supabase to create the data table and its access rules |
