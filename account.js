@@ -24,6 +24,7 @@
     url: cfg.supabaseUrl.replace(/\/+$/, ""),
     key: cfg.supabaseKey,
     me: () => mePromise,
+    client: sb,
     token: async () => { const { data } = await sb.auth.getSession(); if (!data.session) { toLogin(); throw new Error("Signed out"); } return data.session.access_token; },
   };
 

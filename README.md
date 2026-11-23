@@ -82,6 +82,21 @@ Until this is done, the AI tutor page shows "The AI tutor isn't set up yet".
 If Claude declines to answer something for safety reasons, the request automatically
 retries on another Claude model (Anthropic's "fallbacks" feature).
 
+## Social (optional)
+
+The **Social** tab lets friends revise together:
+- **The Neighbourhood**: a little park where your neighbours wander around, with their latest notes in speech bubbles. Click one to see their week, streak and latest note, and cheer them on. Until friends join, three guides (Hazel, Rowan and Juniper) share study tips.
+- **Notice board**: short friends-only posts (140 characters) with cheers.
+- **Friends**: add people by their exact @handle, then accept or decline requests.
+- **Your neighbour**: build your character and choose your name, handle and status, plus whether to share study stats.
+
+**Privacy:** nothing is public. People can only find you by typing your exact handle. Only accepted friends see your notes, online status and stats (time this week, streak and top subject, never grades or ratings). You can remove a friend at any time.
+
+### Setup
+In Supabase, open **SQL Editor → New query**, paste in all of
+[`supabase-social-setup.sql`](supabase-social-setup.sql) and click **Run**. Until you do,
+the Social tab shows "Social isn't switched on yet".
+
 ## Files
 | File | What it is |
 |---|---|
@@ -95,3 +110,6 @@ retries on another Claude model (Anthropic's "fallbacks" feature).
 | `ai-chat.js`, `ai-chat.css` | The AI tutor page |
 | `supabase-ai-setup.sql` | Run once for the AI tutor: daily message limits |
 | `supabase/functions/ai-chat/index.ts` | The AI tutor's server code (a Supabase Edge Function) |
+| `social.js`, `social.css` | The Social tab and The Neighbourhood |
+| `supabase-social-setup.sql` | Run once for Social: profiles, friends, notes and their privacy rules |
+| `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |

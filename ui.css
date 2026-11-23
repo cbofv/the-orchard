@@ -457,3 +457,113 @@
 #o .hero { justify-content: flex-start; align-items: center; }
 #o .hero > * { text-align: left; margin-left: 0; margin-right: 0; }
 #o .hero .now-btn, #o .hero .hero-next { margin-top: 0; margin-bottom: 0; }
+
+/* ==========================================================================
+   SIDEBAR v2 — quieter, more like a native app
+   ========================================================================== */
+#o .drawer-title { align-items: center; }
+#o .o-brand-text { display: grid; line-height: 1.15; }
+#o .o-brand-text b { font-weight: 650; font-size: .95rem; letter-spacing: -.015em; }
+#o .o-brand-sub { font-size: .72rem; font-weight: 500; color: var(--ink-faint); letter-spacing: 0; }
+#o .brand-mark { width: 30px; height: 30px; border-radius: 8px; background-size: 19px; }
+#o .drawer-head { margin-bottom: 14px; padding-left: 6px; }
+#o .drawer nav a { height: 31px; font-size: .86rem; font-weight: 500; gap: 9px; padding: 0 8px; border-radius: 6px; color: color-mix(in srgb, var(--ink) 78%, transparent); }
+#o .drawer nav a svg { width: 16px; height: 16px; stroke-width: 1.6; opacity: .62; }
+#o .drawer nav a:hover { background: var(--o-hover); }
+/* Selected: a small raised tab, like a native source list */
+#o .drawer nav a[aria-current="page"] { background: var(--o-raised); color: var(--ink); font-weight: 600; box-shadow: 0 0 0 1px var(--o-border), 0 1px 2px rgb(0 0 0 / .06); }
+:root:is([data-theme="tinted"], [data-theme="black-glass"]) #o .drawer nav a[aria-current="page"] { background: rgb(255 255 255 / .07); box-shadow: 0 0 0 1px rgb(255 255 255 / .06); }
+#o .drawer nav a[aria-current="page"] svg { stroke: var(--ink); opacity: .9; }
+/* Subjects: a colour chip instead of an icon */
+#o .drawer nav a.o-subj svg { display: none; }
+#o .drawer nav a.o-subj::before { content: ""; flex: none; width: 10px; height: 10px; margin: 0 3px; border-radius: 3px; background: var(--o-subj); box-shadow: inset 0 0 0 1px rgb(0 0 0 / .08); }
+#o .drawer nav a > span:not(.o-meta) { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#o .o-meta { margin-left: auto; font-size: .74rem; font-weight: 500; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+#o .o-meta:empty { display: none; }
+#o .drawer nav a .grip { margin-left: 4px; }
+#o .drawer nav a.o-hidden { display: none; }
+/* Group headings: small, clickable to collapse */
+#o .nav-label.o-group { display: flex; align-items: center; gap: 4px; margin: 16px 8px 4px; padding: 2px 0; font-size: .72rem; font-weight: 600; color: var(--ink-faint); cursor: pointer; user-select: none; }
+#o .nav-label.o-group:hover { color: var(--ink-soft); }
+#o .o-chev { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .15s; opacity: 0; }
+#o .nav-label.o-group:hover .o-chev, #o .nav-label.o-closed .o-chev { opacity: 1; }
+#o .nav-label.o-closed .o-chev { transform: rotate(-90deg); }
+
+/* ==========================================================================
+   SUBJECT PAGES v2
+   ========================================================================== */
+#o .subject-view .s-main { max-width: 1480px; }
+#o .o-shead { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "icon eyebrow actions" "icon title actions" "icon sub actions"; column-gap: 18px; align-items: center; padding-bottom: 22px; }
+#o .o-shead > .eyebrow { grid-area: eyebrow; margin: 0 0 2px; color: var(--o-subj); }
+#o .o-shead > .page-title { grid-area: title; }
+#o .o-shead > .page-sub { grid-area: sub; margin-top: 4px; }
+#o .o-sicon { grid-area: icon; width: 64px; height: 64px; border-radius: 16px; display: grid; place-items: center; background: color-mix(in srgb, var(--o-subj) 13%, var(--o-surface)); border: 1px solid color-mix(in srgb, var(--o-subj) 24%, transparent); }
+#o .o-sicon svg { width: 30px; height: 30px; fill: none; stroke: var(--o-subj); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+#o .o-sactions { grid-area: actions; display: flex; gap: 8px; }
+#o .o-sactions .chip { display: inline-flex; align-items: center; gap: 7px; height: 34px; }
+#o .o-sactions svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+@media (max-width: 900px) {
+  #o .o-shead { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "icon eyebrow" "icon title" "sub sub" "actions actions"; row-gap: 4px; }
+  #o .o-sicon { width: 48px; height: 48px; border-radius: 12px; }
+  #o .o-sactions { margin-top: 12px; }
+}
+/* Overview strip becomes a proper summary card */
+#o .subject-view .syl-ov { padding: 18px 20px 16px; margin-bottom: 22px; background: var(--o-surface); border: 1px solid var(--o-border); border-radius: var(--o-r-lg); box-shadow: var(--o-shadow-sm); }
+#o .subject-view .syl-ov .stats { margin-bottom: 14px; }
+#o .subject-view .syl-ov .stat { padding: 0; }
+#o .ragbar { height: 8px; border-radius: 6px; overflow: hidden; background: var(--o-sunken); gap: 2px; }
+#o .ragbar > span { border-radius: 2px; }
+/* Each paper is one card: header + its topics */
+#o .subject-view .paper { margin-bottom: 22px; background: var(--o-surface); border: 1px solid var(--o-border); border-radius: var(--o-r-lg); box-shadow: var(--o-shadow-sm); overflow: hidden; }
+#o .subject-view .paper-head { margin: 0; border: 0; border-bottom: 1px solid var(--o-border); border-radius: 0; box-shadow: none; background: linear-gradient(90deg, color-mix(in srgb, var(--o-subj) 7%, transparent), transparent 60%); padding: 18px 22px; }
+#o .subject-view .paper-num { color: var(--o-subj); font-weight: 600; font-size: .78rem; }
+#o .subject-view .paper-title { font: 600 1.2rem var(--display); letter-spacing: -.02em; margin: 2px 0 10px; }
+#o .subject-view .paper-sections { font-size: .875rem; }
+#o .subject-view .paper .drop.topic { border-bottom: 1px solid var(--o-border); padding: 0 22px; }
+#o .subject-view .paper .drop.topic:last-child { border-bottom: 0; }
+#o .subject-view .topic-head { padding: 14px 0; }
+#o .subject-view .topic-name { font: 600 .98rem var(--display); letter-spacing: -.01em; }
+#o .subject-view .topic-kind { font-size: .8rem; color: var(--ink-faint); }
+#o .subject-view .topic-head .ragbar { width: 160px; height: 6px; }
+#o .subject-view .topic-pct { font: 600 .9rem var(--display); min-width: 3ch; text-align: right; }
+#o .rag-key { color: var(--ink-faint); font-size: .8rem; }
+/* Side rail */
+#o .o-srail { display: none; }
+@media (min-width: 1240px) {
+  #o .subject-view:not(.split) .o-stopics { display: grid; grid-template-columns: minmax(0, 1fr) 340px; column-gap: 28px; align-items: start; }
+  #o .subject-view:not(.split) .o-stopics > * { grid-column: 1; min-width: 0; }
+  #o .subject-view:not(.split) .o-srail { display: flex; flex-direction: column; gap: 14px; grid-column: 2; grid-row: 1 / span 4; position: sticky; top: calc(var(--o-head) + 20px); }
+}
+#o .o-card { padding: 16px 18px; background: var(--o-surface); border: 1px solid var(--o-border); border-radius: var(--o-r-lg); box-shadow: var(--o-shadow-sm); }
+#o .o-card h3 { margin: 0 0 12px; font: 600 .88rem var(--display); letter-spacing: -.005em; }
+#o .o-dim { color: var(--ink-faint); }
+#o .o-small { font-size: .78rem; margin: 10px 0 0; }
+#o .o-exams { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+#o .o-exams li { display: flex; gap: 12px; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--o-border); }
+#o .o-exams li:last-child { border-bottom: 0; padding-bottom: 0; }
+#o .o-exams li > div { display: grid; min-width: 0; font-size: .82rem; }
+#o .o-exams li b { font-size: .88rem; }
+#o .o-exams li em { font-style: normal; text-align: right; font: 600 1.25rem/1 var(--display); letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+#o .o-exams li em small { display: block; font: 500 .68rem var(--body); color: var(--ink-faint); letter-spacing: 0; margin-top: 2px; }
+#o .o-exams li.o-next em { color: var(--o-subj); }
+#o .o-prog { display: flex; align-items: center; gap: 18px; margin-bottom: 12px; }
+#o .o-ring { --p: 0; flex: none; width: 86px; height: 86px; border-radius: 50%; display: grid; place-items: center; background: conic-gradient(var(--o-subj) calc(var(--p) * 1%), var(--o-sunken) 0); }
+#o .o-ring::before { content: ""; grid-area: 1 / 1; width: 70px; height: 70px; border-radius: 50%; background: var(--o-surface); }
+#o .o-ring span { grid-area: 1 / 1; z-index: 1; font: 600 1.3rem var(--display); letter-spacing: -.03em; }
+#o .o-ring small { font-size: .7rem; color: var(--ink-faint); }
+#o .o-break { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; flex: 1; font-size: .8rem; color: var(--ink-soft); }
+#o .o-break li { display: flex; align-items: center; gap: 8px; }
+#o .o-break b { margin-left: auto; color: var(--ink); font-variant-numeric: tabular-nums; }
+#o .o-break .dot, #o .o-focus .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+#o .dot.green { background: #3f9a5a; } #o .dot.amber { background: #d89a2b; } #o .dot.red { background: #cf4b3f; } #o .dot.none { background: transparent; box-shadow: inset 0 0 0 1.5px var(--o-border-strong); }
+#o .o-kv { display: flex; justify-content: space-between; padding-top: 8px; margin-top: 8px; border-top: 1px solid var(--o-border); font-size: .82rem; color: var(--ink-soft); }
+#o .o-kv b { color: var(--ink); font-weight: 600; }
+#o .o-focus { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+#o .o-focus button { display: flex; align-items: flex-start; gap: 10px; width: 100%; padding: 7px 8px; margin: 0 -8px; border: 0; border-radius: 7px; background: none; color: inherit; text-align: left; font: inherit; cursor: pointer; }
+#o .o-focus button:hover { background: var(--o-hover); }
+#o .o-focus .dot { margin-top: 6px; }
+#o .o-focus button > span { display: grid; min-width: 0; font-size: .8rem; color: var(--ink-faint); }
+#o .o-focus button b { font-size: .86rem; font-weight: 550; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (min-width: 1120px) {
+  #o .subject-view.split .s-main { top: var(--o-head); height: calc(100vh - var(--o-head)); }
+}
