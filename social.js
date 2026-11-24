@@ -226,7 +226,8 @@
     const top = Object.entries(bySubj).sort((a, b) => b[1] - a[1])[0];
     const cardsWeek = Object.entries(cardLog.days).filter(([k]) => k >= wk).reduce((a, [, n]) => a + n, 0);
     const mastered = typeof syl !== "undefined" ? Object.values(syl.cards || {}).filter(b => b >= 3).length : 0;
-    return { weekMins, todayMins, streak, top: top ? top[0] : null, cardsWeek, cardsToday: cardLog.days[td] || 0, mastered, at: new Date().toISOString() };
+    const ls = window.orchardLongShot ? window.orchardLongShot.forFriends() : null;
+    return { weekMins, todayMins, streak, top: top ? top[0] : null, cardsWeek, cardsToday: cardLog.days[td] || 0, mastered, ls, at: new Date().toISOString() };
   }
 
   /* ---------- loading ---------- */
@@ -278,7 +279,7 @@
         }
       }
       S.loaded = true;
-      const sig = JSON.stringify([[...S.people.values()].map(p => [p.id, p.display_name, p.handle, p.avatar, p.status, p.share_stats, p.stats && [p.stats.weekMins, p.stats.streak, p.stats.cardsWeek, p.stats.mastered], online(p)]),
+      const sig = JSON.stringify([[...S.people.values()].map(p => [p.id, p.display_name, p.handle, p.avatar, p.status, p.share_stats, p.stats && [p.stats.weekMins, p.stats.streak, p.stats.cardsWeek, p.stats.mastered, p.stats.ls && p.stats.ls.s], online(p)]),
         S.requests, S.outgoing, S.notes.map(n => n.id), [...S.cheers], S.messages.map(m => [m.id, !!m.read_at]), S.awards.map(a => a.id), [...S.adminIds], S.isAdmin, S.adminAwards.map(a => a.id),
         S.rooms.map(r => [r.id, r.started_at, r.minutes, r.name]), S.members.map(m => [m.room_id, m.user_id, m.subject, Date.now() - new Date(m.last_seen).getTime() < 45000]), S.stats, S.announcements.map(a => a.id)]);
       if (sig !== S.sig || !root.querySelector(".page-head")) { S.sig = sig; if (!quiet || location.hash === "#social") render(); }
@@ -698,7 +699,9 @@
         <ol class="nb-rank">${sorted.map((p, i) => rankRow(p, i, show(p), sub ? sub(p) : undefined)).join("")}</ol></section>`;
     };
     const st = p => p.stats || {};
+    const td = iso(new Date()), lsToday = p => (st(p).ls && st(p).ls.d === td ? st(p).ls.s : 0);
     return `<div class="nb-boards">
+      ${board("Long Shot today", "Today’s daily game score", lsToday, p => (lsToday(p) ? lsToday(p).toLocaleString("en-GB") : "–"), p => hidden(p) ? "Stats hidden" : (st(p).ls && st(p).ls.streak ? `${st(p).ls.streak}-day streak` : "Not played"))}
       ${board("Flashcards this week", "Cards reviewed in the last 7 days", p => st(p).cardsWeek || 0, p => (st(p).cardsWeek || 0).toLocaleString("en-GB"), p => hidden(p) ? "Stats hidden" : `${st(p).cardsToday || 0} today`)}
       ${board("Cards mastered", "Flashcards in box 3 or above", p => st(p).mastered || 0, p => (st(p).mastered || 0).toLocaleString("en-GB"), p => hidden(p) ? "Stats hidden" : `${st(p).cardsWeek || 0} reviewed this week`)}
       ${board("Study time this week", "From the Study log", p => st(p).weekMins || 0, p => fmt(st(p).weekMins || 0))}
@@ -1277,6 +1280,14 @@
     badge: () => { if (!S.profile) return ""; const n = incoming().length + unreadFrom(); return n ? String(n) : ""; },
     avatar, badgeSVG,
     cardDays: () => ({ ...cardLog.days }),
+    // Friends' Long Shot scores today (for the game page), and a way to share yours straight away
+    longShot: () => {
+      if (!S.profile) return null;
+      const td = iso(new Date());
+      return friends().filter(p => !hidden(p) && p.stats && p.stats.ls && p.stats.ls.d === td)
+        .map(p => ({ id: p.id, name: p.display_name, avatar: avatar(p), score: p.stats.ls.s, picks: p.stats.ls.t || "" }));
+    },
+    shareNow: () => heartbeat(true),
     rank: () => {
       if (!S.profile) return null;
       const people = [{ ...S.profile, stats: S.profile.share_stats ? myStats() : S.profile.stats }, ...friends().filter(p => !hidden(p))];

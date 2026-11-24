@@ -6,7 +6,7 @@
    Requests to other sites (Supabase, fonts) are never cached here.
    The list below is written by tools/stamp.py. */
 /* stamp:start */
-const CACHE = "orchard-c58bfcd4";
+const CACHE = "orchard-9be5cfa3";
 const SHELL = [
   "./",
   "index.html",
@@ -19,11 +19,14 @@ const SHELL = [
   "account.css?v=dd36b4fbaa",
   "account.js?v=4a8f48cdb9",
   "app.css?v=f82133b5eb",
-  "app.js?v=073b9e1e6f",
+  "app.js?v=a266487145",
+  "game-prompts.js?v=e1e16d990f",
+  "game.css?v=ccb8bfb87d",
+  "game.js?v=474223eb4e",
   "phone.css?v=f690546a58",
   "phone.js?v=c91becab60",
   "social.css?v=f9a02ffeac",
-  "social.js?v=ef4754db8c",
+  "social.js?v=2749f797a7",
   "supabase.js?v=59d39487c3",
   "ui.css?v=4227a3d61a",
   "ui.js?v=f08b331c0c"

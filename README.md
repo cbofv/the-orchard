@@ -85,6 +85,12 @@ The Orchard can be installed on phones and computers. On desktop Chrome or Edge,
 - **What should I do now? → Plan my day**: choose 1 to 4 hours and get a set of focused sessions across subjects, chosen by exam dates and weak topics, with breaks. **Start** runs the focus timer (which logs the session), and **Add to calendar** saves the plan.
 - **Weekly recap**: shown on Home from Monday to Wednesday (or from **Weekly recap** next to Insights). It covers time studied versus the week before, days studied, flashcards reviewed, where your time went, your rank among friends and what's coming up.
 
+## Long Shot (game)
+The **Long Shot** tab (under Play) is a revision game: name a correct answer to a prompt, and the fewer people who'd think of it, the more it scores, from a Windfall (10) to a Golden Apple (100). You can keep guessing until the 20-second clock runs out, and small typos are forgiven.
+- **Daily:** seven prompts, the same for everyone that day, one go. Share your result, keep a streak, and see friends' scores (and a "Long Shot today" leaderboard in Social).
+- **Unlimited:** endless prompts with three lives; pick a category or play relaxed with no timer.
+- Prompts live in `game-prompts.js` (subject, prompt, answers with a rarity from 1 to 6). Add more in the same format, then run `python3 tools/stamp.py`.
+
 ## Phone mode
 On a phone, The Orchard switches to a layout made for it (`phone.js`, `phone.css`); iPads and computers keep the full layout.
 - **Upright:** a tab bar at the bottom (Home, Log, Subjects, Social, More). Subjects opens a sheet of your subjects with how confident you are in each; More opens the full menu. The header tucks away as you scroll down and shows the page name.
@@ -114,5 +120,6 @@ On a phone, The Orchard switches to a layout made for it (`phone.js`, `phone.css
 | `supabase-social-4.sql` | Study rooms, announcements and admin stats |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | Installable app: manifest, offline support and icons |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |
+| `game.js`, `game.css`, `game-prompts.js` | The Long Shot game and its prompts |
 | `phone.js`, `phone.css` | Phone mode (see above) |
 | `tools/stamp.py` | Fingerprints the files so browsers can cache them (see Speed below) |
