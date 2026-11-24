@@ -85,6 +85,14 @@ The Orchard can be installed on phones and computers. On desktop Chrome or Edge,
 - **What should I do now? → Plan my day**: choose 1 to 4 hours and get a set of focused sessions across subjects, chosen by exam dates and weak topics, with breaks. **Start** runs the focus timer (which logs the session), and **Add to calendar** saves the plan.
 - **Weekly recap**: shown on Home from Monday to Wednesday (or from **Weekly recap** next to Insights). It covers time studied versus the week before, days studied, flashcards reviewed, where your time went, your rank among friends and what's coming up.
 
+## Settings
+Settings (the gear icon) is split into Appearance, Layout, Reading and General, with tabs at the top:
+- **Appearance:** 23 themes (11 light, 12 dark, including Oak to match the app icon), 12 accent colours, 13 fonts (including Easy reading and Hyperlegible for comfortable reading), text size, bold text, corners and a background texture.
+- **Layout:** density (compact, comfortable, spacious) and content width on wide screens.
+- **Reading and accessibility:** line spacing (with a dyslexia-friendly option), high contrast, colour-blind-safe rating colours, motion, 3D effects and celebrations.
+- **General:** start page (including "where I left off"), keyboard shortcuts on or off, sidebar order and a reset button.
+Settings are remembered on each device. The extra ones live in `prefs.js` and `prefs.css`.
+
 ## Long Shot (game)
 The **Long Shot** tab (under Play) is a revision game: name a correct answer to a prompt, and the fewer people who'd think of it, the more it scores, from a Windfall (10) to a Golden Apple (100). You can keep guessing until the 20-second clock runs out, and small typos are forgiven.
 - **Daily:** seven prompts, the same for everyone that day, one go. Share your result, keep a streak, and see friends' scores (and a "Long Shot today" leaderboard in Social).
@@ -120,6 +128,7 @@ On a phone, The Orchard switches to a layout made for it (`phone.js`, `phone.css
 | `supabase-social-4.sql` | Study rooms, announcements and admin stats |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | Installable app: manifest, offline support and icons |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |
+| `prefs.js`, `prefs.css` | Extra themes, fonts and settings |
 | `game.js`, `game.css`, `game-prompts.js` | The Long Shot game and its prompts |
 | `phone.js`, `phone.css` | Phone mode (see above) |
 | `tools/stamp.py` | Fingerprints the files so browsers can cache them (see Speed below) |

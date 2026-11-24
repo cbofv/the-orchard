@@ -8190,8 +8190,8 @@ initStore();
    ============================================================ */
 const PREFS_KEY = "orchard-prefs";
 const prefs = { theme: "olive-noir", size: "m", motion: "auto", fx3d: "off", font: "default" };
-const THEME_TONES = { "olive-white": "daylight", "olive-noir": "tinted", "champagne": "tinted", "ivory-navy": "daylight", "daylight": "daylight", "rouge-noir": "tinted", "blue-coral": "tinted", "cognac": "tinted", "anthracite": "tinted", "white-sand": "daylight" };
-const THEME_META = { "olive-white": "#f6f5ef", "olive-noir": "#070806", champagne: "#0a0907", "ivory-navy": "#f7f5f0", "black-glass": "#000000", daylight: "#f4f4f2", "rouge-noir": "#0a0405", "blue-coral": "#020b0a", cognac: "#0b0705", anthracite: "#111114", "white-sand": "#e9e5df" };
+const THEME_TONES = { "olive-white": "daylight", "olive-noir": "tinted", "champagne": "tinted", "ivory-navy": "daylight", "daylight": "daylight", "rouge-noir": "tinted", "blue-coral": "tinted", "cognac": "tinted", "anthracite": "tinted", "white-sand": "daylight", "sage": "daylight", "rose": "daylight", "lavender": "daylight", "apricot": "daylight", "sky": "daylight", "paper": "daylight", "oak": "tinted", "midnight": "tinted", "forest": "tinted", "plum": "tinted", "ember": "tinted", "slate": "tinted" };
+const THEME_META = { "olive-white": "#f6f5ef", "olive-noir": "#070806", champagne: "#0a0907", "ivory-navy": "#f7f5f0", "black-glass": "#000000", daylight: "#f4f4f2", "rouge-noir": "#0a0405", "blue-coral": "#020b0a", cognac: "#0b0705", anthracite: "#111114", "white-sand": "#e9e5df" , "sage": "#eef1ea", "rose": "#f8eff0", "lavender": "#f2f0f8", "apricot": "#faf2e9", "sky": "#eef4f9", "paper": "#ffffff", "oak": "#000000", "midnight": "#060a14", "forest": "#050b07", "plum": "#0d0710", "ember": "#0b0604", "slate": "#0e1217" };
 try {
   const saved = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") || {};
   if (!saved.theme && localStorage.getItem("orchard-theme") === "black-glass") saved.theme = "black-glass";
@@ -8210,7 +8210,8 @@ function applyPrefs() {
   if (prefs.font === "editorial" || prefs.font === "clean") {
     d.dataset.font = prefs.font;
     if (!document.getElementById("font-extra")) document.head.insertAdjacentHTML("beforeend", '<link rel="stylesheet" id="font-extra" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap">');
-  } else delete d.dataset.font;
+  } else if (!(window.ORCHARD_FONTS && ORCHARD_FONTS[prefs.font] && ORCHARD_FONTS[prefs.font].q)) delete d.dataset.font;
+  if (window.orchardApplyExtras) window.orchardApplyExtras(prefs);
   d.style.fontSize = PREF_SIZES[prefs.size] || "100%";
   const rm = prefs.motion === "reduce" || (prefs.motion !== "full" && sysReduce.matches);
   d.classList.toggle("reduce-motion", rm);

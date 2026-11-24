@@ -13,7 +13,7 @@
   var p = {};
   try { p = JSON.parse(localStorage.getItem("orchard-prefs") || "{}") || {}; if (!p.theme && localStorage.getItem("orchard-theme") === "black-glass") p.theme = "black-glass"; } catch (e) {}
   var d = document.documentElement, sizes = { s: "93.75%", m: "100%", l: "112.5%", xl: "125%" };
-  var tones = { "olive-white": "daylight", "olive-noir": "tinted", "champagne": "tinted", "ivory-navy": "daylight", "daylight": "daylight", "rouge-noir": "tinted", "blue-coral": "tinted", "cognac": "tinted", "anthracite": "tinted", "white-sand": "daylight" };
+  var tones = { "olive-white": "daylight", "olive-noir": "tinted", "champagne": "tinted", "ivory-navy": "daylight", "daylight": "daylight", "rouge-noir": "tinted", "blue-coral": "tinted", "cognac": "tinted", "anthracite": "tinted", "white-sand": "daylight", "sage": "daylight", "rose": "daylight", "lavender": "daylight", "apricot": "daylight", "sky": "daylight", "paper": "daylight", "oak": "tinted", "midnight": "tinted", "forest": "tinted", "plum": "tinted", "ember": "tinted", "slate": "tinted" };
   if (!p.theme || p.theme === "nebula") p.theme = "olive-noir";
   if (!tones[p.theme] && p.theme !== "black-glass") p.theme = "olive-noir";
   d.dataset.theme = tones[p.theme] || "black-glass";
@@ -45,7 +45,9 @@
 <link rel="stylesheet" href="app.css?v=f82133b5eb">
 <link rel="stylesheet" href="ui.css?v=4227a3d61a">
 <link rel="stylesheet" href="game.css?v=ccb8bfb87d">
+<link rel="stylesheet" href="prefs.css?v=d1a1601844">
 <link rel="stylesheet" href="phone.css?v=f690546a58">
+<script src="prefs.js?v=b5f9d5ac06"></script>
 <script src="phone.js?v=c91becab60"></script>
 </head>
 <body id="o">
@@ -603,7 +605,7 @@
 
 <div class="toast glass" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button type="button" id="toast-action" hidden>Undo</button></div>
 
-<script src="app.js?v=a266487145"></script>
+<script src="app.js?v=64fb92e53f"></script>
 
 <script>
 /* Full screen: toggles the whole Orchard. Uses the standard API, with the
