@@ -85,6 +85,12 @@ The Orchard can be installed on phones and computers. On desktop Chrome or Edge,
 - **What should I do now? → Plan my day**: choose 1 to 4 hours and get a set of focused sessions across subjects, chosen by exam dates and weak topics, with breaks. **Start** runs the focus timer (which logs the session), and **Add to calendar** saves the plan.
 - **Weekly recap**: shown on Home from Monday to Wednesday (or from **Weekly recap** next to Insights). It covers time studied versus the week before, days studied, flashcards reviewed, where your time went, your rank among friends and what's coming up.
 
+## Phone mode
+On a phone, The Orchard switches to a layout made for it (`phone.js`, `phone.css`); iPads and computers keep the full layout.
+- **Upright:** a tab bar at the bottom (Home, Log, Subjects, Social, More). Subjects opens a sheet of your subjects with how confident you are in each; More opens the full menu. The header tucks away as you scroll down and shows the page name.
+- **Sideways:** the tab bar becomes a slim rail on the left so pages keep their height.
+- Sheets (Subjects, settings, focus timer) can be swiped down to close, and typing never zooms the page.
+
 ## Speed
 - The app's code and styles live in their own files (`app.js`, `app.css` and so on) rather than inside `index.html`. Each is linked with a fingerprint, e.g. `app.js?v=1a2b3c4d5e`, so a device keeps it until it actually changes. After an update, people only download the files that changed.
 - Subject pages are drawn when you open them, not all at start-up.
@@ -108,4 +114,5 @@ The Orchard can be installed on phones and computers. On desktop Chrome or Edge,
 | `supabase-social-4.sql` | Study rooms, announcements and admin stats |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | Installable app: manifest, offline support and icons |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |
+| `phone.js`, `phone.css` | Phone mode (see above) |
 | `tools/stamp.py` | Fingerprints the files so browsers can cache them (see Speed below) |

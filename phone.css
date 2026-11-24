@@ -1,0 +1,171 @@
+/* ==========================================================================
+   THE ORCHARD — PHONE MODE
+   Only applies when phone.js marks the page <html data-device="phone">
+   (an upright phone, or a phone turned sideways). Desktops and iPads never
+   see any of this.
+   ========================================================================== */
+
+:root[data-device="phone"] #o {
+  --o-head: 52px;
+  --o-tab-h: 60px;
+  --o-safe-b: env(safe-area-inset-bottom, 0px);
+  --o-safe-l: env(safe-area-inset-left, 0px);
+  --o-safe-r: env(safe-area-inset-right, 0px);
+  --o-safe-t: env(safe-area-inset-top, 0px);
+  -webkit-tap-highlight-color: transparent;
+}
+.o-tabbar, .o-ptitle { display: none; }
+
+/* ---------- Header ---------- */
+:root[data-device="phone"] #o .topbar {
+  left: 0; right: 0; height: calc(var(--o-head) + var(--o-safe-t)); gap: 4px;
+  padding: var(--o-safe-t) calc(10px + var(--o-safe-r)) 0 calc(16px + var(--o-safe-l));
+  transition: transform .28s var(--o-ease), box-shadow .2s;
+  will-change: transform;
+}
+:root[data-device="phone"] #o.o-head-away .topbar { transform: translateY(-100%); }
+:root[data-device="phone"] #o :is(#menu-btn, #fs-btn, #prefs-btn, .o-crumbs, .dock > a[href="#home"]) { display: none; }
+:root[data-device="phone"] #o .dock { gap: 0; }
+:root[data-device="phone"] #o .dock .icon-btn { width: 40px; height: 40px; }
+:root[data-device="phone"] #o .o-search { width: 40px; height: 40px; }
+:root[data-device="phone"] #o .o-avatar { margin-left: 4px; }
+
+:root[data-device="phone"] #o .o-ptitle { display: grid; flex: 1; min-width: 0; height: 100%; align-items: center; overflow: hidden; }
+#o .o-ptitle > span { grid-area: 1 / 1; display: flex; align-items: center; gap: 8px; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: opacity .2s, transform .25s var(--o-ease); }
+#o .o-pt-brand { font: 600 .98rem/1 var(--display); letter-spacing: -.01em; color: var(--ink); }
+#o .o-pt-brand .brand-mark { flex: none; }
+#o .o-pt-page { font: 600 1rem/1 var(--display); color: var(--ink); opacity: 0; transform: translateY(8px); }
+#o.o-scrolled .o-pt-brand { opacity: 0; transform: translateY(-8px); }
+#o.o-scrolled .o-pt-page { opacity: 1; transform: none; }
+
+/* ---------- Page ---------- */
+:root[data-device="phone"] #o main {
+  margin: 0; max-width: none;
+  padding: calc(var(--o-head) + var(--o-safe-t)) calc(16px + var(--o-safe-r)) calc(var(--o-tab-h) + var(--o-safe-b) + 28px) calc(16px + var(--o-safe-l));
+}
+:root[data-device="phone"] #o main > .view { max-width: none; }
+:root[data-device="phone"] #o .page-head { padding: 20px 0 16px; }
+:root[data-device="phone"] #o .page-title { font-size: 1.75rem; }
+:root[data-device="phone"] #o .page-sub { font-size: .95rem; }
+:root[data-device="phone"] #o #view-home .hero { padding: 18px 0 16px; gap: 10px; }
+:root[data-device="phone"] #o .greeting { font-size: 1.6rem; }
+:root[data-device="phone"] #o .o-foot { display: none; }
+
+/* Typing in a box never zooms the page (iPhone zooms text under 16px) */
+:root[data-device="phone"] #o :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), select, textarea) { font-size: 16px; }
+
+/* Comfortable tap targets */
+:root[data-device="phone"] #o .chip { min-height: 36px; }
+:root[data-device="phone"] #o .chip.sm { min-height: 32px; }
+
+/* Tab strips scroll sideways with a soft edge instead of wrapping */
+:root[data-device="phone"] #o .seg {
+  overflow-x: auto; scrollbar-width: none; flex-wrap: nowrap; max-width: 100%;
+  -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+          mask-image: linear-gradient(90deg, #000 calc(100% - 28px), transparent);
+}
+:root[data-device="phone"] #o .seg::-webkit-scrollbar { display: none; }
+:root[data-device="phone"] #o .seg > button { flex: none; }
+
+/* Pop-up messages sit above the tab bar */
+:root[data-device="phone"] #o .toast { left: 50%; bottom: calc(var(--o-tab-h) + var(--o-safe-b) + 14px); max-width: calc(100vw - 32px); white-space: normal; }
+
+/* ---------- Bottom sheets (settings, focus timer, subjects) ---------- */
+:root[data-device="phone"] #o .sheet-wrap { align-items: flex-end; }
+:root[data-device="phone"] #o .sheet-wrap > .sheet {
+  width: 100%; max-width: none; max-height: 88dvh; margin: 0;
+  border-radius: 20px 20px 0 0; border-bottom: 0;
+  padding: 10px calc(18px + var(--o-safe-r)) calc(20px + var(--o-safe-b)) calc(18px + var(--o-safe-l));
+  overscroll-behavior: contain;
+}
+:root[data-device="phone"] #o .sheet-grab { margin-bottom: 12px; }
+#o.o-sheet-open { overflow: hidden; }
+
+/* ---------- Tab bar ---------- */
+:root[data-device="phone"] #o .o-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 45;
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  height: calc(var(--o-tab-h) + var(--o-safe-b));
+  padding: 0 var(--o-safe-r) var(--o-safe-b) var(--o-safe-l);
+  background: var(--o-head-bg); border-top: 1px solid var(--o-border);
+  backdrop-filter: saturate(160%) blur(14px); -webkit-backdrop-filter: saturate(160%) blur(14px);
+}
+#o .o-tab {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  min-width: 0; color: var(--ink-faint); text-decoration: none;
+  font: 500 .68rem/1 var(--body); letter-spacing: .01em;
+  -webkit-user-select: none; user-select: none; touch-action: manipulation;
+}
+#o .o-tab svg {
+  width: 44px; height: 28px; padding: 3px 10px; border-radius: 999px; box-sizing: border-box;
+  fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round;
+  transition: background .2s, color .2s;
+}
+#o .o-tab[data-ptab="more"] svg { fill: currentColor; stroke: none; }
+#o .o-tab span { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#o .o-tab.on { color: var(--ink); }
+#o .o-tab.on svg { color: var(--acc); background: color-mix(in srgb, var(--acc) 17%, transparent); }
+#o .o-tab:active svg { transform: scale(.94); }
+#o .o-tab:focus-visible { outline: none; }
+#o .o-tab:focus-visible svg { box-shadow: 0 0 0 2px var(--acc); }
+
+/* ---------- Subjects sheet ---------- */
+#o .o-subsheet-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 12px; }
+#o .o-subsheet-head h2 { margin: 0; font: 600 1.15rem/1.2 var(--display); letter-spacing: -.015em; color: var(--ink); }
+#o .o-subgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#o .o-subcard {
+  display: grid; gap: 8px; align-content: start; padding: 14px; min-height: 112px;
+  border: 1px solid var(--o-border); border-radius: var(--o-r-lg); background: var(--o-surface);
+  color: var(--ink); text-decoration: none; transition: border-color .15s, background .15s, transform .12s;
+}
+#o .o-subcard:active { transform: scale(.98); background: var(--o-hover); }
+#o .o-subcard.on { border-color: color-mix(in srgb, var(--o-subj) 70%, transparent); }
+#o .o-subicon {
+  display: grid; place-items: center; width: 36px; height: 36px; border-radius: 10px;
+  color: var(--o-subj); background: color-mix(in srgb, var(--o-subj) 16%, transparent);
+}
+#o .o-subicon svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+#o .o-subname { font: 600 .95rem/1.25 var(--display); letter-spacing: -.01em; }
+#o .o-subpct { display: block; height: 4px; border-radius: 4px; background: var(--o-sunken); overflow: hidden; margin-top: auto; }
+#o .o-subpct i { display: block; height: 100%; border-radius: inherit; background: var(--o-subj); }
+#o .o-subnum { font-size: .75rem; color: var(--ink-faint); }
+
+/* ---------- Sideways: a slim rail on the left instead of a bottom bar ---------- */
+:root[data-device="phone"][data-orient="landscape"] #o { --o-head: 44px; --o-rail: 76px; }
+:root[data-device="phone"][data-orient="landscape"] #o .o-tabbar {
+  top: 0; right: auto; bottom: 0; width: calc(var(--o-rail) + var(--o-safe-l)); height: auto;
+  grid-template-columns: 1fr; grid-template-rows: repeat(5, minmax(0, 52px)); align-content: center; gap: 4px;
+  padding: var(--o-safe-t) 0 var(--o-safe-b) var(--o-safe-l);
+  border-top: 0; border-right: 1px solid var(--o-border);
+}
+:root[data-device="phone"][data-orient="landscape"] #o .o-tab { font-size: .62rem; }
+:root[data-device="phone"][data-orient="landscape"] #o .o-tab svg { width: 40px; height: 26px; }
+:root[data-device="phone"][data-orient="landscape"] #o .topbar { left: calc(var(--o-rail) + var(--o-safe-l)); padding-left: 20px; padding-top: 0; height: var(--o-head); }
+:root[data-device="phone"][data-orient="landscape"] #o main {
+  padding: var(--o-head) calc(20px + var(--o-safe-r)) calc(24px + var(--o-safe-b)) calc(var(--o-rail) + var(--o-safe-l) + 20px);
+}
+:root[data-device="phone"][data-orient="landscape"] #o .page-head { padding: 14px 0 12px; }
+:root[data-device="phone"][data-orient="landscape"] #o .page-title { font-size: 1.5rem; }
+:root[data-device="phone"][data-orient="landscape"] #o .toast { left: calc(50% + var(--o-rail) / 2); bottom: calc(var(--o-safe-b) + 14px); }
+:root[data-device="phone"][data-orient="landscape"] #o .sheet-wrap > .sheet {
+  width: min(620px, 100% - var(--o-rail) - var(--o-safe-l)); margin-left: calc(var(--o-rail) + var(--o-safe-l)); max-height: 92dvh;
+}
+:root[data-device="phone"][data-orient="landscape"] #o .o-subgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+:root[data-device="phone"][data-orient="landscape"] #o .o-subcard { min-height: 96px; padding: 12px; }
+
+@media (prefers-reduced-motion: reduce) {
+  #o .topbar, #o .o-ptitle > span, #o .o-tab svg { transition: none !important; }
+}
+
+/* ---------- Pages that were wider than a phone ---------- */
+:root[data-device="phone"] #o main > .view, :root[data-device="phone"] #o main > .view > * { min-width: 0; max-width: 100%; }
+:root[data-device="phone"] #o .seg { display: flex; width: max-content; min-width: 0; }
+:root[data-device="phone"] #o .nb-welcome-card .nb-editor, :root[data-device="phone"] #o .nb-editor { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+:root[data-device="phone"] #o .ex-card { flex-direction: column; align-items: stretch; gap: 10px; }
+:root[data-device="phone"] #o .ex-card-side { flex-wrap: wrap; gap: 8px; justify-content: flex-start; flex-shrink: 1; min-width: 0; }
+:root[data-device="phone"] #o #view-guide > * { max-width: 100%; }
+
+/* The menu (More) opens at once on a phone */
+:root[data-device="phone"] #o.menu-open .drawer nav a { transition-delay: 0s, 0s, calc(min(var(--i, 0), 8) * 15ms), calc(min(var(--i, 0), 8) * 15ms); transition-duration: .2s, .2s, .22s, .22s; }
+:root[data-device="phone"] #o .drawer { padding-bottom: calc(12px + var(--o-safe-b)); }
+:root[data-device="phone"] #o .drawer nav a { min-height: 42px; }
