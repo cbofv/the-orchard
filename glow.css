@@ -64,9 +64,6 @@
   background-image: linear-gradient(color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px);
   background-size: 80px 80px;
   -webkit-mask-image: radial-gradient(ellipse at 55% 0%, #000 10%, transparent 62%); mask-image: radial-gradient(ellipse at 55% 0%, #000 10%, transparent 62%); }
-.gx-spot { position: absolute; top: 0; left: 0; width: 760px; height: 760px; margin: -380px 0 0 -380px; border-radius: 50%;
-  background: radial-gradient(circle, color-mix(in srgb, var(--acc) 11%, transparent), transparent 60%); opacity: 0; transition: opacity .6s; will-change: transform; }
-.gx-spot.on { opacity: 1; }
 .gx-prog { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 61; transform-origin: left; transform: scaleX(0); pointer-events: none;
   background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 55%, transparent), var(--acc)); display: none; }
 :root[data-style="glow"] .gx-prog { display: block; }
@@ -150,8 +147,78 @@
 :root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(4) { animation-delay: .15s; }
 :root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(n+5) { animation-delay: .2s; }
 @keyframes gx-rise { from { opacity: 0; transform: translateY(22px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes gx-swing { from { opacity: 0; transform: perspective(1400px) translateY(46px) rotateX(14deg) scale(.97); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
 
 /* ---------- Calm when motion is reduced ---------- */
 :root[data-style="glow"].reduce-motion .gx-orb, :root[data-style="glow"].reduce-motion #o .greeting { animation: none; }
-:root[data-style="glow"].reduce-motion .gx-spot { display: none; }
-:root[data-style="glow"].reduce-motion #o main > .view > * { animation: none !important; }
+:root[data-style="glow"].reduce-motion :root[data-style="glow"].reduce-motion #o main > .view > * { animation: none !important; }
+
+/* ==========================================================================
+   MORE MOTION AND 3D (Settings → 3D effects; off with Reduced motion)
+   ========================================================================== */
+/* Pages swing up into place in 3D */
+:root[data-style="glow"]:not([data-depth="off"]) #o main > .view:not([hidden]):not(#view-social):not(#view-longshot) > * { animation-name: gx-swing; animation-duration: .85s; transform-origin: 50% 0; }
+
+/* Headings slide up out of a mask, like the homepage */
+:root[data-style="glow"] #o main > .view:not([hidden]) .page-title { animation: gx-title .9s cubic-bezier(.2, .9, .1, 1) .05s both; }
+:root[data-style="glow"] #o #view-home:not([hidden]) .greeting { animation: gx-title .9s cubic-bezier(.2, .9, .1, 1) both, gx-shine 7s linear 1s infinite; }
+@keyframes gx-title { from { clip-path: inset(0 0 100% 0); transform: translateY(45%); } to { clip-path: inset(0 0 -20% 0); transform: none; } }
+
+/* The 3D floor: a grid stretching into the distance, gliding towards you */
+.gx-floor { position: absolute; left: -40%; right: -40%; bottom: -8vh; height: 58vh; perspective: 520px; perspective-origin: 50% 0%; pointer-events: none;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.6) 45%, transparent 100%); mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.6) 45%, transparent 100%); opacity: .55; }
+.gx-floor i { position: absolute; inset: -60px 0 0; transform: rotateX(72deg); transform-origin: 50% 100%;
+  background-image: linear-gradient(color-mix(in srgb, var(--acc) 26%, transparent) 1.5px, transparent 1.5px), linear-gradient(90deg, color-mix(in srgb, var(--acc) 22%, transparent) 1.5px, transparent 1.5px);
+  background-size: 64px 64px; animation: gx-glide 4.5s linear infinite; }
+@keyframes gx-glide { from { transform: rotateX(72deg) translateY(0); } to { transform: rotateX(72deg) translateY(64px); } }
+:root[data-theme="daylight"] .gx-floor { opacity: .4; }
+
+/* Orbiting rings: a slow 3D gyroscope in the corner */
+.gx-gyro { position: absolute; top: 9vh; right: 6vw; width: 340px; height: 340px; transform-style: preserve-3d; perspective: 900px; opacity: .5; }
+.gx-gyro.small { top: auto; bottom: 18vh; right: auto; left: 4vw; width: 180px; height: 180px; opacity: .35; }
+.gx-gyro i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--acc) 45%, transparent); box-shadow: 0 0 24px color-mix(in srgb, var(--acc) 18%, transparent), inset 0 0 24px color-mix(in srgb, var(--acc) 10%, transparent); transform-style: preserve-3d; }
+.gx-gyro i:nth-child(1) { animation: gx-orbit1 18s linear infinite; }
+.gx-gyro i:nth-child(2) { inset: 9%; animation: gx-orbit2 24s linear infinite; }
+.gx-gyro i:nth-child(3) { inset: 18%; animation: gx-orbit3 30s linear infinite; }
+.gx-gyro b { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 30px 6px color-mix(in srgb, var(--acc) 45%, transparent); animation: gx-pulse 4s ease-in-out infinite; }
+@keyframes gx-orbit1 { from { transform: rotateX(70deg) rotateZ(0); } to { transform: rotateX(70deg) rotateZ(360deg); } }
+@keyframes gx-orbit2 { from { transform: rotateY(65deg) rotateZ(0); } to { transform: rotateY(65deg) rotateZ(-360deg); } }
+@keyframes gx-orbit3 { from { transform: rotateX(35deg) rotateY(-50deg) rotateZ(0); } to { transform: rotateX(35deg) rotateY(-50deg) rotateZ(360deg); } }
+@keyframes gx-pulse { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.35); opacity: .55; } }
+:root[data-theme="daylight"] .gx-gyro { opacity: .35; }
+@media (max-width: 700px) { .gx-gyro { width: 200px; height: 200px; right: -40px; top: 12vh; opacity: .3; } .gx-gyro.small { display: none; } .gx-floor { height: 40vh; } }
+:root[data-depth="off"] :is(.gx-floor, .gx-gyro) { display: none; }
+
+/* Cards tilt towards the pointer */
+:root[data-style="glow"]:not([data-depth="off"]):not(.reduce-motion) #o .gx-tilt {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)) translateZ(6px);
+  transition: transform .18s ease-out, background-color .4s, border-color .4s, box-shadow .4s;
+  box-shadow: 0 24px 50px -24px color-mix(in srgb, var(--acc) 45%, transparent);
+  will-change: transform; position: relative; z-index: 1;
+}
+:root[data-style="glow"]:not(.reduce-motion) #o :is(.stat, .hud-tile, .ex-cell, .ex-card, .q-card, .q-quest, .mode-card, .theme-card, .font-card, .res-tile, .icard, .tc, .now-pick, .pp-card, .rp-card, .es-card, .gd-try, .o-subcard, .pp-style, .ls-mode) {
+  transition: transform .6s cubic-bezier(.2, .8, .2, 1), background-color .4s, border-color .4s, box-shadow .4s;
+}
+
+/* Cards further down rise in as you scroll to them */
+:root[data-style="glow"] #o .gx-pre { opacity: 0; transform: perspective(1200px) translateY(50px) rotateX(16deg) scale(.97); filter: blur(6px); transform-origin: 50% 0; }
+:root[data-style="glow"] #o .gx-pre.gx-in { opacity: 1; transform: none; filter: none; transition: opacity .9s cubic-bezier(.2, .8, .2, 1) var(--gx-d, 0ms), transform .9s cubic-bezier(.2, .8, .2, 1) var(--gx-d, 0ms), filter .9s var(--gx-d, 0ms); }
+
+/* Buttons: a sweep of light on hover and a little press */
+:root[data-style="glow"] #o .primary:not(:disabled) { background-image: linear-gradient(110deg, transparent 38%, rgb(255 255 255 / .38) 50%, transparent 62%), linear-gradient(135deg, color-mix(in srgb, var(--acc) 78%, #fff), var(--acc)); background-size: 250% 100%, 100% 100%; background-position: 150% 0, 0 0; background-repeat: no-repeat; }
+:root[data-style="glow"]:not(.reduce-motion) #o .primary:hover:not(:disabled) { animation: gx-sweep .9s ease-out; }
+@keyframes gx-sweep { from { background-position: 150% 0, 0 0; } to { background-position: -60% 0, 0 0; } }
+:root[data-style="glow"]:not(.reduce-motion) #o :is(.primary, .chip, .stab, .icon-btn, .o-tab):active { transform: scale(.96); }
+
+/* Sidebar icons nudge on hover; the current page's icon glows */
+:root[data-style="glow"]:not(.reduce-motion) #o .drawer nav a svg { transition: transform .3s cubic-bezier(.2, .8, .2, 1); }
+:root[data-style="glow"]:not(.reduce-motion) #o .drawer nav a:hover svg { transform: translateX(2px) scale(1.08); }
+:root[data-style="glow"] #o .drawer nav a[aria-current="page"] svg { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--acc) 70%, transparent)); }
+
+/* Rings and bars fill in smoothly */
+:root[data-style="glow"]:not(.reduce-motion) #o :is(.ragbar span, .o-subpct i, .ls-time i) { transition: width .9s cubic-bezier(.2, .8, .2, 1), transform .2s linear; }
+
+/* Calm when motion is reduced */
+:root.reduce-motion :is(.gx-floor i, .gx-gyro i, .gx-gyro b) { animation: none; }
+:root[data-style="glow"].reduce-motion #o :is(.page-title, .greeting) { animation: none !important; }
+:root[data-style="glow"].reduce-motion #o .gx-pre { opacity: 1; transform: none; filter: none; }

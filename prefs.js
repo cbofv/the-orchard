@@ -33,13 +33,15 @@
   }
 
   /* ---------- the extra settings ---------- */
-  const DEFAULTS = { style: "glow", accent: "theme", bold: "off", radius: "default", bg: "grain", density: "default", width: "full", leading: "normal", contrast: "standard", rag: "classic", celebrate: "on", start: "home", keys: "on" };
-  const ATTRS = { accent: "theme", bold: "off", radius: "default", bg: "grain", density: "default", width: "full", leading: "normal", contrast: "standard", rag: "classic", celebrate: "on", keys: "on" };
+  const DEFAULTS = { style: "glow", depth: "on", accent: "theme", bold: "off", radius: "default", bg: "grain", density: "default", width: "full", leading: "normal", contrast: "standard", rag: "classic", celebrate: "on", start: "home", keys: "on" };
+  const ATTRS = { depth: "on", accent: "theme", bold: "off", radius: "default", bg: "grain", density: "default", width: "full", leading: "normal", contrast: "standard", rag: "classic", celebrate: "on", keys: "on" };
   function read() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
 
   window.orchardApplyExtras = function (p) {
     p = p || read();
     if (FONTS[p.font] && FONTS[p.font].q) { root.dataset.font = p.font; loadFont(p.font); }
+    // One switch for all 3D (the app's older 3D charts follow it too)
+    p.fx3d = p.depth === "off" ? "off" : "on";
     // Style: Glow (the homepage look, default) or Basic
     root.dataset.style = p.style === "basic" ? "basic" : "glow";
     if (root.dataset.style === "glow" && (!p.font || p.font === "default") && !document.getElementById("font-glow")) {
@@ -138,6 +140,11 @@
       group("leading", "Line spacing", chips("leading", [["tight", "Tight"], ["normal", "Normal"], ["relaxed", "Relaxed"], ["airy", "Extra (dyslexia friendly)"]]), "Extra adds space between lines, letters and words. Try it with the Easy reading or Hyperlegible font.") +
       group("contrast", "Contrast", chips("contrast", [["standard", "Standard"], ["high", "High"]]), "Makes faint text and borders stronger.") +
       group("rag", "Rating colours", `${chips("rag", [["classic", "Red, amber, green"], ["cb", "Colour-blind safe"], ["mono", "Shades of one colour"]])}<div class="pp-ragdemo"><span><i class="dot red"></i>Struggled</span><span><i class="dot amber"></i>Getting there</span><span><i class="dot green"></i>Confident</span></div>`, "Colour-blind safe uses orange, yellow and blue, which stay distinct with the common types of colour blindness."));
+    if (g3d) {
+      g3d.querySelectorAll('[data-pref="fx3d"]').forEach(b => { b.dataset.pref = "depth"; });
+      const hint = g3d.querySelector(".pref-hint");
+      if (hint) hint.textContent = "Cards that tilt towards your pointer, pages that swing into view, the moving 3D floor and orbiting rings behind the page, and charts drawn in perspective. Off, or Reduced motion, keeps everything flat and still.";
+    }
     g3d?.insertAdjacentHTML("afterend", group("celebrate", "Celebrations", chips("celebrate", [["on", "On"], ["off", "Off"]]), "Confetti and sparkles when you finish quests or find a Golden Apple."));
 
     // General
