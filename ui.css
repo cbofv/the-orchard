@@ -532,6 +532,8 @@
 @media (min-width: 1240px) {
   #o .subject-view:not(.split) .o-stopics { display: grid; grid-template-columns: minmax(0, 1fr) 340px; column-gap: 28px; align-items: start; }
   #o .subject-view:not(.split) .o-stopics > * { grid-column: 1; min-width: 0; }
+  /* The topic list must disappear when another tab (Flashcards, Mistakes…) is open */
+  #o .subject-view .o-stopics[hidden] { display: none; }
   #o .subject-view:not(.split) .o-srail { display: flex; flex-direction: column; gap: 14px; grid-column: 2; grid-row: 1 / span 4; position: sticky; top: calc(var(--o-head) + 20px); }
 }
 #o .o-card { padding: 16px 18px; background: var(--o-surface); border: 1px solid var(--o-border); border-radius: var(--o-r-lg); box-shadow: var(--o-shadow-sm); }

@@ -538,3 +538,25 @@ const O_SUBJECT_COLOURS = {
   setTimeout(render, 2500); setTimeout(render, 8000);
   addEventListener("hashchange", () => { if ((location.hash || "#home") === "#home") render(); });
 })();
+
+/* ==========================================================================
+   Switching a subject tab (Flashcards, Mistakes…) always shows its content:
+   if the tabs are scrolled out of view, scroll back up to them.
+   ========================================================================== */
+(function tabsInView() {
+  "use strict";
+  if (typeof setSeg !== "function") return;
+  const orig = setSeg;
+  setSeg = function (def, name) {
+    const out = orig.apply(this, arguments);
+    try {
+      const seg = def.el.root.querySelector(".seg");
+      if (seg && !def.el.root.hidden) {
+        const head = parseFloat(getComputedStyle(document.body).getPropertyValue("--o-head")) || 56;
+        const top = seg.getBoundingClientRect().top;
+        if (top < head) scrollTo({ top: Math.max(0, scrollY + top - head - 16), behavior: (typeof reduceMotion !== "undefined" && reduceMotion) ? "auto" : "smooth" });
+      }
+    } catch (e) {}
+    return out;
+  };
+})();
