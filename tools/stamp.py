@@ -18,7 +18,7 @@ ASSETS = ["app.css", "app.js", "ui.css", "ui.js", "social.css", "social.js",
           "account.css", "account.js", "supabase.js", "phone.css", "phone.js", "game.css", "game.js", "game-prompts.js", "prefs.css", "prefs.js"]
 PAGES = ["index.html", "login.html"]
 # Not fingerprinted: config.js (you edit it by hand) and the icons.
-PLAIN = ["./", "index.html", "login.html", "config.js", "icon.svg", "icon-192.png",
+PLAIN = ["./", "index.html", "login.html", "welcome.html", "config.js", "icon.svg", "icon-192.png",
          "icon-512.png", "manifest.webmanifest"]
 
 def code(name):

@@ -13,11 +13,12 @@
   const clone = v => (v === undefined ? undefined : JSON.parse(JSON.stringify(v)));
   const toMe = u => ({ id: u.id, email: u.email, name: (u.user_metadata && u.user_metadata.name) || u.email.split("@")[0] });
 
+  const toHome = () => location.replace("welcome.html");
   const mePromise = sb.auth.getSession().then(({ data }) => {
-    if (!data.session) { toLogin(); throw new Error("Signed out"); }
+    if (!data.session) { toHome(); throw new Error("Signed out"); }
     return toMe(data.session.user);
   });
-  sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") toLogin(); });
+  sb.auth.onAuthStateChange(ev => { if (ev === "SIGNED_OUT") toHome(); });
 
   /* For other parts of the app (the Social tab) that call Supabase directly */
   window.orchardAuth = {
@@ -176,7 +177,7 @@
   async function signOut() {
     clearLocal();
     try { await sb.auth.signOut(); } catch (e) {}
-    toLogin();
+    location.replace("welcome.html");
   }
   async function exportData() {
     const rows = await allRows(null);

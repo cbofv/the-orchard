@@ -113,6 +113,7 @@ On a phone, The Orchard switches to a layout made for it (`phone.js`, `phone.css
 ## Files
 | File | What it is |
 |---|---|
+| `welcome.html` | The homepage visitors see before signing in |
 | `index.html` | The Orchard app's page layout |
 | `app.js`, `app.css` | The Orchard app's code and styles (all subjects, study log, calendar and so on) |
 | `login.html` | Sign in, create account, reset password |
