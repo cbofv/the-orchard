@@ -13,8 +13,8 @@
   --gx-line: color-mix(in srgb, var(--ink) 9%, transparent);
   --gx-line-hi: color-mix(in srgb, var(--ink) 16%, transparent);
   --gx-glass: color-mix(in srgb, var(--bg) 62%, transparent);
-  --gx-orb: color-mix(in srgb, var(--acc) 34%, transparent);
-  --gx-orb-soft: color-mix(in srgb, var(--acc) 18%, transparent);
+  --gx-orb: color-mix(in srgb, var(--acc) 26%, transparent);
+  --gx-orb-soft: color-mix(in srgb, var(--acc) 13%, transparent);
   --gx-shadow: 0 30px 80px -20px rgb(0 0 0 / .55);
   --o-surface: var(--gx-card); --o-border: var(--gx-line); --o-border-strong: var(--gx-line-hi);
   --o-head-bg: color-mix(in srgb, var(--bg) 58%, transparent);
@@ -60,15 +60,10 @@
 .gx-o2 { top: 35vh; left: -22vw; width: 760px; height: 760px; background: radial-gradient(circle, var(--gx-orb-soft), transparent 62%); animation-delay: -8s; }
 .gx-o3 { bottom: -35vh; right: -12vw; width: 880px; height: 880px; background: radial-gradient(circle, var(--gx-orb-soft), transparent 62%); animation-delay: -14s; }
 @keyframes gx-drift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(70px, -50px) scale(1.12); } }
-.gx-grid { position: absolute; inset: 0;
-  background-image: linear-gradient(color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px);
-  background-size: 80px 80px;
-  -webkit-mask-image: radial-gradient(ellipse at 55% 0%, #000 10%, transparent 62%); mask-image: radial-gradient(ellipse at 55% 0%, #000 10%, transparent 62%); }
 .gx-prog { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 61; transform-origin: left; transform: scaleX(0); pointer-events: none;
   background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 55%, transparent), var(--acc)); display: none; }
 :root[data-style="glow"] .gx-prog { display: block; }
-:root[data-style="glow"][data-bg] .gx-grid { display: none; }
-
+:root[data-style="glow"][data-bg] 
 /* ---------- Header and sidebar: frosted glass ---------- */
 :root[data-style="glow"] #o .topbar {
   background: var(--o-head-bg); border-bottom: 1px solid var(--gx-line);
@@ -146,8 +141,8 @@
 :root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(3) { animation-delay: .1s; }
 :root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(4) { animation-delay: .15s; }
 :root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(n+5) { animation-delay: .2s; }
-@keyframes gx-rise { from { opacity: 0; transform: translateY(22px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
-@keyframes gx-swing { from { opacity: 0; transform: perspective(1400px) translateY(46px) rotateX(14deg) scale(.97); filter: blur(8px); } to { opacity: 1; transform: none; filter: none; } }
+@keyframes gx-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@keyframes gx-swing { from { opacity: 0; transform: perspective(1400px) translateY(24px) rotateX(7deg); } to { opacity: 1; transform: none; } }
 
 /* ---------- Calm when motion is reduced ---------- */
 :root[data-style="glow"].reduce-motion .gx-orb, :root[data-style="glow"].reduce-motion #o .greeting { animation: none; }
@@ -157,37 +152,12 @@
    MORE MOTION AND 3D (Settings → 3D effects; off with Reduced motion)
    ========================================================================== */
 /* Pages swing up into place in 3D */
-:root[data-style="glow"]:not([data-depth="off"]) #o main > .view:not([hidden]):not(#view-social):not(#view-longshot) > * { animation-name: gx-swing; animation-duration: .85s; transform-origin: 50% 0; }
+:root[data-style="glow"]:not([data-depth="off"]) #o main > .view:not([hidden]):not(#view-social):not(#view-longshot) > * { animation-name: gx-swing; animation-duration: .7s; transform-origin: 50% 0; }
 
 /* Headings slide up out of a mask, like the homepage */
 :root[data-style="glow"] #o main > .view:not([hidden]) .page-title { animation: gx-title .9s cubic-bezier(.2, .9, .1, 1) .05s both; }
 :root[data-style="glow"] #o #view-home:not([hidden]) .greeting { animation: gx-title .9s cubic-bezier(.2, .9, .1, 1) both, gx-shine 7s linear 1s infinite; }
 @keyframes gx-title { from { clip-path: inset(0 0 100% 0); transform: translateY(45%); } to { clip-path: inset(0 0 -20% 0); transform: none; } }
-
-/* The 3D floor: a grid stretching into the distance, gliding towards you */
-.gx-floor { position: absolute; left: -40%; right: -40%; bottom: -8vh; height: 58vh; perspective: 520px; perspective-origin: 50% 0%; pointer-events: none;
-  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.6) 45%, transparent 100%); mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.6) 45%, transparent 100%); opacity: .55; }
-.gx-floor i { position: absolute; inset: -60px 0 0; transform: rotateX(72deg); transform-origin: 50% 100%;
-  background-image: linear-gradient(color-mix(in srgb, var(--acc) 26%, transparent) 1.5px, transparent 1.5px), linear-gradient(90deg, color-mix(in srgb, var(--acc) 22%, transparent) 1.5px, transparent 1.5px);
-  background-size: 64px 64px; animation: gx-glide 4.5s linear infinite; }
-@keyframes gx-glide { from { transform: rotateX(72deg) translateY(0); } to { transform: rotateX(72deg) translateY(64px); } }
-:root[data-theme="daylight"] .gx-floor { opacity: .4; }
-
-/* Orbiting rings: a slow 3D gyroscope in the corner */
-.gx-gyro { position: absolute; top: 9vh; right: 6vw; width: 340px; height: 340px; transform-style: preserve-3d; perspective: 900px; opacity: .5; }
-.gx-gyro.small { top: auto; bottom: 18vh; right: auto; left: 4vw; width: 180px; height: 180px; opacity: .35; }
-.gx-gyro i { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid color-mix(in srgb, var(--acc) 45%, transparent); box-shadow: 0 0 24px color-mix(in srgb, var(--acc) 18%, transparent), inset 0 0 24px color-mix(in srgb, var(--acc) 10%, transparent); transform-style: preserve-3d; }
-.gx-gyro i:nth-child(1) { animation: gx-orbit1 18s linear infinite; }
-.gx-gyro i:nth-child(2) { inset: 9%; animation: gx-orbit2 24s linear infinite; }
-.gx-gyro i:nth-child(3) { inset: 18%; animation: gx-orbit3 30s linear infinite; }
-.gx-gyro b { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px; border-radius: 50%; background: var(--acc); box-shadow: 0 0 30px 6px color-mix(in srgb, var(--acc) 45%, transparent); animation: gx-pulse 4s ease-in-out infinite; }
-@keyframes gx-orbit1 { from { transform: rotateX(70deg) rotateZ(0); } to { transform: rotateX(70deg) rotateZ(360deg); } }
-@keyframes gx-orbit2 { from { transform: rotateY(65deg) rotateZ(0); } to { transform: rotateY(65deg) rotateZ(-360deg); } }
-@keyframes gx-orbit3 { from { transform: rotateX(35deg) rotateY(-50deg) rotateZ(0); } to { transform: rotateX(35deg) rotateY(-50deg) rotateZ(360deg); } }
-@keyframes gx-pulse { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.35); opacity: .55; } }
-:root[data-theme="daylight"] .gx-gyro { opacity: .35; }
-@media (max-width: 700px) { .gx-gyro { width: 200px; height: 200px; right: -40px; top: 12vh; opacity: .3; } .gx-gyro.small { display: none; } .gx-floor { height: 40vh; } }
-:root[data-depth="off"] :is(.gx-floor, .gx-gyro) { display: none; }
 
 /* Cards tilt towards the pointer */
 :root[data-style="glow"]:not([data-depth="off"]):not(.reduce-motion) #o .gx-tilt {
@@ -201,8 +171,8 @@
 }
 
 /* Cards further down rise in as you scroll to them */
-:root[data-style="glow"] #o .gx-pre { opacity: 0; transform: perspective(1200px) translateY(50px) rotateX(16deg) scale(.97); filter: blur(6px); transform-origin: 50% 0; }
-:root[data-style="glow"] #o .gx-pre.gx-in { opacity: 1; transform: none; filter: none; transition: opacity .9s cubic-bezier(.2, .8, .2, 1) var(--gx-d, 0ms), transform .9s cubic-bezier(.2, .8, .2, 1) var(--gx-d, 0ms), filter .9s var(--gx-d, 0ms); }
+:root[data-style="glow"] #o .gx-pre { opacity: 0; transform: perspective(1200px) translateY(30px) rotateX(8deg); transform-origin: 50% 0; }
+:root[data-style="glow"] #o .gx-pre.gx-in { opacity: 1; transform: none; filter: none; transition: opacity .8s cubic-bezier(.2, .8, .2, 1) var(--gx-d, 0ms), transform .8s cubic-bezier(.2, .8, .2, 1) var(--gx-d, 0ms); }
 
 /* Buttons: a sweep of light on hover and a little press */
 :root[data-style="glow"] #o .primary:not(:disabled) { background-image: linear-gradient(110deg, transparent 38%, rgb(255 255 255 / .38) 50%, transparent 62%), linear-gradient(135deg, color-mix(in srgb, var(--acc) 78%, #fff), var(--acc)); background-size: 250% 100%, 100% 100%; background-position: 150% 0, 0 0; background-repeat: no-repeat; }
@@ -219,6 +189,87 @@
 :root[data-style="glow"]:not(.reduce-motion) #o :is(.ragbar span, .o-subpct i, .ls-time i) { transition: width .9s cubic-bezier(.2, .8, .2, 1), transform .2s linear; }
 
 /* Calm when motion is reduced */
-:root.reduce-motion :is(.gx-floor i, .gx-gyro i, .gx-gyro b) { animation: none; }
 :root[data-style="glow"].reduce-motion #o :is(.page-title, .greeting) { animation: none !important; }
 :root[data-style="glow"].reduce-motion #o .gx-pre { opacity: 1; transform: none; filter: none; }
+
+/* ==========================================================================
+   INTERACTIONS
+   ========================================================================== */
+/* Smooth page changes: the page slides and fades; the sidebar stays put */
+:root[data-style="glow"] #o main { view-transition-name: gx-main; }
+:root[data-style="glow"] #o .topbar { view-transition-name: gx-top; }
+:root[data-style="glow"] #o .o-tabbar { view-transition-name: gx-tabs; }
+::view-transition-group(gx-top), ::view-transition-group(gx-tabs) { z-index: 3; }
+::view-transition-group(gx-main) { z-index: 1; }
+::view-transition-old(root), ::view-transition-new(root) { animation: none; }
+::view-transition-old(gx-main) { animation: gx-vt-out .2s cubic-bezier(.4, 0, 1, 1) both; }
+::view-transition-new(gx-main) { animation: gx-vt-in .42s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes gx-vt-out { to { opacity: 0; transform: translateY(-10px) scale(.995); } }
+@keyframes gx-vt-in { from { opacity: 0; transform: translateY(18px); } }
+:root.gx-vt #o main > .view > *, :root.gx-vt #o main .page-title, :root.gx-vt #o .greeting { animation: none !important; }
+
+/* The sidebar highlight glides to the page you pick */
+:root[data-style="glow"] #o .drawer nav { position: relative; }
+.gx-navpill { position: absolute; left: 0; right: 0; top: 0; z-index: 0; border-radius: 12px; pointer-events: none; opacity: 0;
+  background: color-mix(in srgb, var(--acc) 16%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 22%, transparent);
+  transition: transform .5s cubic-bezier(.3, 1.3, .4, 1), height .35s, opacity .25s; }
+:root[data-style="glow"] #o .drawer nav > :not(.gx-navpill) { position: relative; z-index: 1; }
+:root[data-style="glow"] #o .drawer nav a[aria-current="page"] { background: transparent; }
+:root:not([data-style="glow"]) .gx-navpill { display: none; }
+
+/* A soft ripple where you click */
+.gx-ripple-box { position: fixed; z-index: 95; overflow: hidden; pointer-events: none; }
+.gx-ripple-box i { position: absolute; border-radius: 50%; background: color-mix(in srgb, var(--acc) 30%, transparent); transform: scale(0); opacity: .9; animation: gx-ripple .6s cubic-bezier(.2, .8, .2, 1) forwards; }
+.gx-ripple-box.light i { background: rgb(255 255 255 / .38); }
+@keyframes gx-ripple { to { transform: scale(1); opacity: 0; } }
+
+/* Home stat tiles flip over to show more */
+:root[data-style="glow"] #o #stats .gx-flip { cursor: pointer; perspective: 900px; position: relative; }
+:root[data-style="glow"] #o .gx-flipper { position: relative; display: grid; transform-style: preserve-3d; transition: transform .75s cubic-bezier(.3, 1.25, .45, 1); }
+:root[data-style="glow"] #o .gx-flip.is-flipped .gx-flipper { transform: rotateY(180deg); }
+:root[data-style="glow"] #o .gx-face { grid-area: 1 / 1; display: flex; flex-direction: column; gap: 4px; backface-visibility: hidden; -webkit-backface-visibility: hidden; min-width: 0; }
+:root[data-style="glow"] #o .gx-back { transform: rotateY(180deg); justify-content: center; gap: 6px; }
+:root[data-style="glow"] #o .gx-back-k { font-size: .75rem; font-weight: 600; color: var(--acc); }
+:root[data-style="glow"] #o .gx-row { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; font-size: .82rem; }
+:root[data-style="glow"] #o .gx-row em { font-style: normal; color: var(--ink-faint); white-space: nowrap; }
+:root[data-style="glow"] #o .gx-row b { color: var(--ink); font-weight: 600; text-align: right; min-width: 0; overflow-wrap: anywhere; line-height: 1.25; }
+:root[data-style="glow"] #o .gx-fliphint { position: absolute; top: 10px; right: 10px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; color: var(--ink-faint); opacity: 0; transform: rotate(-30deg) scale(.8); transition: opacity .25s, transform .4s cubic-bezier(.3, 1.4, .4, 1); z-index: 2; }
+:root[data-style="glow"] #o .gx-fliphint svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+:root[data-style="glow"] #o .gx-flip:hover .gx-fliphint, :root[data-style="glow"] #o .gx-flip:focus-visible .gx-fliphint, :root[data-style="glow"] #o .gx-flip.is-flipped .gx-fliphint { opacity: 1; transform: none; color: var(--acc); }
+:root:not([data-style="glow"]) #o .gx-back, :root:not([data-style="glow"]) #o .gx-fliphint { display: none; }
+@media (hover: none) { :root[data-style="glow"] #o .gx-fliphint { opacity: .7; transform: none; } }
+
+/* Long Shot: the card flips over to reveal your answer; each new prompt slides in */
+:root[data-style="glow"]:not(.reduce-motion) #o .ls-card:has(.ls-reveal) { animation: gx-cardflip .7s cubic-bezier(.3, 1.2, .45, 1) both; }
+:root[data-style="glow"]:not(.reduce-motion) #o .ls-card:has(.ls-form) { animation: gx-dealin .5s cubic-bezier(.2, .8, .2, 1) both; }
+@keyframes gx-cardflip { 0% { transform: perspective(1200px) rotateY(-90deg); opacity: .4; } 100% { transform: perspective(1200px) rotateY(0); opacity: 1; } }
+@keyframes gx-dealin { from { transform: translateX(40px) rotate(2deg); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* Rating a topic: a little pop and a ring */
+:root[data-style="glow"]:not(.reduce-motion) #o .rag-dot.bump { position: relative; }
+:root[data-style="glow"]:not(.reduce-motion) #o .rag-dot.bump i { animation: gx-pop .5s cubic-bezier(.3, 1.8, .5, 1); }
+:root[data-style="glow"]:not(.reduce-motion) #o .rag-dot.bump::after { content: ""; position: absolute; inset: 2px; border-radius: 50%; border: 2px solid currentColor; color: var(--acc); animation: gx-ring .6s ease-out forwards; pointer-events: none; }
+@keyframes gx-pop { 0% { transform: scale(.4); } 60% { transform: scale(1.25); } 100% { transform: scale(1); } }
+@keyframes gx-ring { from { transform: scale(.6); opacity: .9; } to { transform: scale(2.2); opacity: 0; } }
+
+/* Topic lists: subtopics cascade in when a topic opens */
+:root[data-style="glow"]:not(.reduce-motion) #o .drop.open .sub-row { animation: gx-rise .45s cubic-bezier(.2, .8, .2, 1) both; }
+:root[data-style="glow"]:not(.reduce-motion) #o .drop.open .sub-row:nth-child(2) { animation-delay: .03s; }
+:root[data-style="glow"]:not(.reduce-motion) #o .drop.open .sub-row:nth-child(3) { animation-delay: .06s; }
+:root[data-style="glow"]:not(.reduce-motion) #o .drop.open .sub-row:nth-child(4) { animation-delay: .09s; }
+:root[data-style="glow"]:not(.reduce-motion) #o .drop.open .sub-row:nth-child(n+5) { animation-delay: .12s; }
+
+/* Pop-ups spring in */
+:root[data-style="glow"]:not(.reduce-motion) #o .toast { transition: opacity .3s, transform .55s cubic-bezier(.3, 1.4, .4, 1); }
+:root[data-style="glow"]:not(.reduce-motion) #o .sheet-wrap:not([hidden]) > .sheet { animation: gx-sheet .5s cubic-bezier(.25, 1.2, .4, 1) both; }
+@keyframes gx-sheet { from { opacity: 0; transform: translateY(30px) scale(.97); } }
+
+/* Links in text get an underline that draws in */
+:root[data-style="glow"] #o :is(.section-head a, .o-card a:not(.chip):not(.primary), .page-sub a) { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat; transition: background-size .35s cubic-bezier(.2, .8, .2, 1); text-decoration: none; }
+:root[data-style="glow"] #o :is(.section-head a, .o-card a:not(.chip):not(.primary), .page-sub a):hover { background-size: 100% 1px; }
+
+/* Gentle lift for cards you can click */
+:root[data-style="glow"]:not(.reduce-motion) #o :is(.mode-card, .theme-card, .font-card, .o-subcard, .pp-style, .now-pick, .res-tile, .deck-btn):hover { transform: translateY(-2px); }
+
+.reduce-motion .gx-ripple-box { display: none; }
+:root.reduce-motion #o .gx-flipper { transition: none; }
