@@ -256,3 +256,19 @@
 #o .pp-ragdemo span { display: inline-flex; align-items: center; gap: 6px; }
 #o .pp-ragdemo .dot { position: static; display: inline-block; width: 10px; height: 10px; border-radius: 50%; }
 #o .prefs-sheet .chips { flex-wrap: wrap; }
+
+/* Style picker (Glow / Basic) */
+#o .pp-styles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+#o .pp-style { display: grid; gap: 4px; padding: 10px 10px 12px; text-align: left; border: 1px solid var(--o-border); border-radius: var(--o-r-lg); background: var(--o-surface); color: var(--ink); cursor: pointer; font: inherit; }
+#o .pp-style > b { font: 600 .95rem var(--display); margin-top: 6px; }
+#o .pp-style > span:last-child { font-size: .8rem; color: var(--ink-faint); }
+#o .pp-style[aria-pressed="true"] { border-color: var(--acc); box-shadow: 0 0 0 1px var(--acc); }
+#o .pp-style-pic { position: relative; display: block; height: 64px; border-radius: 12px; overflow: hidden; background: var(--bg); border: 1px solid var(--o-border); }
+#o .pp-style-pic i { position: absolute; display: block; }
+#o .pp-style.glow .pp-style-pic { background: radial-gradient(90% 90% at 70% 0%, color-mix(in srgb, var(--acc) 45%, transparent), transparent 60%), var(--bg); }
+#o .pp-style.glow .pp-style-pic i:nth-child(1) { left: 10px; top: 12px; width: 46%; height: 9px; border-radius: 999px; background: var(--ink); }
+#o .pp-style.glow .pp-style-pic i:nth-child(2) { left: 10px; top: 28px; width: 60%; height: 20px; border-radius: 10px; background: color-mix(in srgb, var(--ink) 9%, transparent); border: 1px solid color-mix(in srgb, var(--ink) 14%, transparent); }
+#o .pp-style.glow .pp-style-pic i:nth-child(3) { right: 10px; bottom: 10px; width: 28%; height: 14px; border-radius: 999px; background: var(--acc); box-shadow: 0 0 14px var(--acc); }
+#o .pp-style.basic .pp-style-pic i:nth-child(1) { left: 10px; top: 12px; width: 40%; height: 7px; border-radius: 3px; background: var(--ink-soft); }
+#o .pp-style.basic .pp-style-pic i:nth-child(2) { left: 10px; top: 26px; width: 60%; height: 22px; border-radius: 6px; background: var(--o-surface, #222); border: 1px solid var(--o-border); }
+#o .pp-style.basic .pp-style-pic i:nth-child(3) { right: 10px; bottom: 10px; width: 26%; height: 13px; border-radius: 4px; background: var(--acc); }

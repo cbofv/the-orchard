@@ -1,0 +1,157 @@
+/* ==========================================================================
+   THE ORCHARD — GLOW STYLE
+   The look of the homepage, across the whole app: Inter Tight, big tight
+   headings, drifting light, glass panels, pill buttons and gentle motion.
+   On when <html data-style="glow"> (the default). Settings → Style → Basic
+   turns it off and the app looks exactly as before.
+   Built on each theme's own colours (--bg, --ink, --acc), so every theme works.
+   ========================================================================== */
+
+:root[data-style="glow"] #o {
+  --gx-card: color-mix(in srgb, var(--ink) 3.6%, transparent);
+  --gx-card-hi: color-mix(in srgb, var(--ink) 6%, transparent);
+  --gx-line: color-mix(in srgb, var(--ink) 9%, transparent);
+  --gx-line-hi: color-mix(in srgb, var(--ink) 16%, transparent);
+  --gx-glass: color-mix(in srgb, var(--bg) 62%, transparent);
+  --gx-orb: color-mix(in srgb, var(--acc) 34%, transparent);
+  --gx-orb-soft: color-mix(in srgb, var(--acc) 18%, transparent);
+  --gx-shadow: 0 30px 80px -20px rgb(0 0 0 / .55);
+  --o-surface: var(--gx-card); --o-border: var(--gx-line); --o-border-strong: var(--gx-line-hi);
+  --o-head-bg: color-mix(in srgb, var(--bg) 58%, transparent);
+}
+:root[data-style="glow"][data-theme="daylight"] #o {
+  --gx-card: color-mix(in srgb, #fff 58%, transparent);
+  --gx-card-hi: color-mix(in srgb, #fff 80%, transparent);
+  --gx-line: color-mix(in srgb, var(--ink) 10%, transparent);
+  --gx-glass: color-mix(in srgb, var(--bg) 70%, transparent);
+  --gx-orb: color-mix(in srgb, var(--acc) 20%, transparent);
+  --gx-orb-soft: color-mix(in srgb, var(--acc) 11%, transparent);
+  --gx-shadow: 0 30px 70px -24px rgb(20 22 16 / .22);
+}
+:root[data-style="glow"]:not([data-radius]) #o { --o-r-xs: 8px; --o-r-sm: 12px; --o-r: 16px; --o-r-lg: 24px; }
+
+/* ---------- Type: Inter Tight, big and tight (when no other font is picked) ---------- */
+:root[data-style="glow"]:not([data-font]) #o {
+  --display: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --body: "Inter Tight", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+:root[data-style="glow"] #o .page-title {
+  font-size: clamp(2.3rem, 1.5rem + 2.2vw, 3.5rem); font-weight: 700; line-height: 1; letter-spacing: -.05em;
+}
+:root[data-style="glow"] #o .page-head { padding: 44px 0 30px; }
+:root[data-style="glow"] #o .page-sub { font-size: 1.05rem; letter-spacing: -.01em; color: color-mix(in srgb, var(--ink) 62%, transparent); }
+:root[data-style="glow"] #o .eyebrow { font-weight: 600; color: var(--acc); }
+:root[data-style="glow"] #o .greeting {
+  font-size: clamp(2.6rem, 1.8rem + 2.8vw, 4.4rem); font-weight: 700; line-height: .98; letter-spacing: -.055em;
+  background: linear-gradient(100deg, var(--ink) 0%, var(--ink) 35%, var(--acc) 50%, var(--ink) 65%, var(--ink) 100%);
+  background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  animation: gx-shine 7s linear infinite;
+}
+@keyframes gx-shine { from { background-position: 100% 0; } to { background-position: -150% 0; } }
+:root[data-style="glow"] #o :is(.stat .v, .ls-big, .ls-stat-grid b, .o-recap-stats b, .q-ring b) { font-weight: 700; letter-spacing: -.045em; }
+:root[data-style="glow"] #o :is(.o-card h3, .paper-title, .topic-name, .sub-detail h2) { letter-spacing: -.02em; }
+:root[data-style="glow"] #o .paper-title { font-weight: 650; letter-spacing: -.03em; }
+
+/* ---------- Background: drifting light, a faint grid and a spotlight ---------- */
+.gx-bg { display: none; }
+:root[data-style="glow"] .gx-bg { display: block; position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
+.gx-orb { position: absolute; border-radius: 50%; animation: gx-drift 22s ease-in-out infinite; will-change: transform; }
+.gx-o1 { top: -35vh; left: 28vw; width: 1000px; height: 1000px; background: radial-gradient(circle, var(--gx-orb), transparent 62%); }
+.gx-o2 { top: 35vh; left: -22vw; width: 760px; height: 760px; background: radial-gradient(circle, var(--gx-orb-soft), transparent 62%); animation-delay: -8s; }
+.gx-o3 { bottom: -35vh; right: -12vw; width: 880px; height: 880px; background: radial-gradient(circle, var(--gx-orb-soft), transparent 62%); animation-delay: -14s; }
+@keyframes gx-drift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(70px, -50px) scale(1.12); } }
+.gx-grid { position: absolute; inset: 0;
+  background-image: linear-gradient(color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--ink) 4%, transparent) 1px, transparent 1px);
+  background-size: 80px 80px;
+  -webkit-mask-image: radial-gradient(ellipse at 55% 0%, #000 10%, transparent 62%); mask-image: radial-gradient(ellipse at 55% 0%, #000 10%, transparent 62%); }
+.gx-spot { position: absolute; top: 0; left: 0; width: 760px; height: 760px; margin: -380px 0 0 -380px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--acc) 11%, transparent), transparent 60%); opacity: 0; transition: opacity .6s; will-change: transform; }
+.gx-spot.on { opacity: 1; }
+.gx-prog { position: fixed; top: 0; left: 0; right: 0; height: 2px; z-index: 61; transform-origin: left; transform: scaleX(0); pointer-events: none;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--acc) 55%, transparent), var(--acc)); display: none; }
+:root[data-style="glow"] .gx-prog { display: block; }
+:root[data-style="glow"][data-bg] .gx-grid { display: none; }
+
+/* ---------- Header and sidebar: frosted glass ---------- */
+:root[data-style="glow"] #o .topbar {
+  background: var(--o-head-bg); border-bottom: 1px solid var(--gx-line);
+  backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%);
+}
+:root[data-style="glow"] #o .drawer {
+  background: color-mix(in srgb, var(--bg) 66%, transparent); border-right: 1px solid var(--gx-line);
+  backdrop-filter: blur(24px) saturate(150%); -webkit-backdrop-filter: blur(24px) saturate(150%);
+}
+:root[data-style="glow"] #o .drawer nav a { border-radius: 12px; transition: background .25s, color .25s; }
+:root[data-style="glow"] #o .drawer nav a:hover { background: color-mix(in srgb, var(--ink) 6%, transparent); }
+:root[data-style="glow"] #o .drawer nav a[aria-current="page"] { background: color-mix(in srgb, var(--acc) 17%, transparent); color: var(--acc); font-weight: 600; }
+:root[data-style="glow"] #o .drawer nav a[aria-current="page"] svg { opacity: 1; }
+:root[data-style="glow"] #o .nav-search, :root[data-style="glow"] #o .o-search { border-radius: 999px; background: color-mix(in srgb, var(--ink) 5%, transparent); border-color: var(--gx-line); }
+:root[data-style="glow"] #o .o-tabbar { background: color-mix(in srgb, var(--bg) 62%, transparent); backdrop-filter: blur(22px) saturate(150%); -webkit-backdrop-filter: blur(22px) saturate(150%); }
+
+/* ---------- Cards: glass, with light that follows the pointer ---------- */
+:root[data-style="glow"] #o :is(.o-card, .glass, .log-card, .adder-panel, .icard, .paper-head, .res-tile, .g9, .qx-hero, .qx-text, .qx-card, .mode-card,
+  .gd-rule, .gd-routine, .gd-try, .mx-result, .mx-card, .mx-st, .tc, .fc-hero, .bl-intro, .bl-card, .pp-card, .pp-tips, .radar-wrap, .hud-tile,
+  .g-hero .stat, .chart.holo, .ex-hud, .ex-cell, .ex-card, .ex-notes, .rp-hud, .rp-card, .rp-sec, .ex-kit, .mp-chart, .q-card, .q-quest, .q-badge,
+  .es-hud, .es-card, .es-structure, .es-box, .now-pick, .drop.topic, .stat) {
+  background-color: var(--gx-card);
+  border-color: var(--gx-line);
+  box-shadow: none;
+  transition: background-color .4s, border-color .4s, box-shadow .4s;
+}
+:root[data-style="glow"] #o .gx-lit {
+  background-image: radial-gradient(420px circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--acc) 11%, transparent), transparent 55%);
+  border-color: color-mix(in srgb, var(--acc) 38%, var(--gx-line));
+}
+:root[data-style="glow"] #o :is(.o-recap, .now-pick.on, .ls-daily, .o-subj-hero) {
+  background-image: linear-gradient(160deg, color-mix(in srgb, var(--acc) 20%, transparent), color-mix(in srgb, var(--acc) 3%, transparent));
+  border-color: color-mix(in srgb, var(--acc) 32%, transparent);
+}
+:root[data-style="glow"] #o :is(.sheet, .o-keys > div, .now-sheet, .sumsheet > div) {
+  background: var(--gx-glass); border: 1px solid var(--gx-line);
+  backdrop-filter: blur(30px) saturate(150%); -webkit-backdrop-filter: blur(30px) saturate(150%);
+  box-shadow: var(--gx-shadow);
+}
+:root[data-style="glow"] #o .sheet { border-radius: 28px; }
+:root[data-device="phone"][data-style="glow"] #o .sheet-wrap > .sheet { border-radius: 24px 24px 0 0; }
+
+/* ---------- Buttons, chips, tabs and boxes: pills with a glow ---------- */
+:root[data-style="glow"] #o .primary {
+  border-radius: 999px; padding-left: 20px; padding-right: 20px; font-weight: 600;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--acc) 78%, #fff), var(--acc)); color: var(--acc-ink);
+  box-shadow: 0 6px 24px -10px color-mix(in srgb, var(--acc) 70%, transparent);
+  transition: box-shadow .3s, transform .2s, filter .2s;
+}
+:root[data-style="glow"][data-theme="daylight"] #o .primary { background: linear-gradient(135deg, color-mix(in srgb, var(--acc) 85%, #fff), var(--acc)); }
+:root[data-style="glow"] #o .primary:hover:not(:disabled) { box-shadow: 0 10px 44px -8px color-mix(in srgb, var(--acc) 75%, transparent); transform: translateY(-1px); filter: none; }
+:root[data-style="glow"] #o :is(.chip, .stab, .ghost) {
+  border-radius: 999px; background-color: color-mix(in srgb, var(--ink) 5%, transparent); border-color: color-mix(in srgb, var(--ink) 12%, transparent);
+  transition: background-color .25s, border-color .25s, color .25s, transform .2s;
+}
+:root[data-style="glow"] #o :is(.chip, .stab, .ghost):hover { border-color: color-mix(in srgb, var(--ink) 26%, transparent); }
+:root[data-style="glow"] #o :is(.chip, .stab)[aria-pressed="true"], :root[data-style="glow"] #o .chip.on {
+  background-color: color-mix(in srgb, var(--acc) 18%, transparent); border-color: color-mix(in srgb, var(--acc) 60%, transparent); color: var(--ink);
+}
+:root[data-style="glow"] #o .seg { border-radius: 999px; background: color-mix(in srgb, var(--ink) 5%, transparent); border-color: var(--gx-line); }
+:root[data-style="glow"] #o .seg > button { border-radius: 999px; }
+:root[data-style="glow"] #o .seg .seg-glow { border-radius: 999px; background: color-mix(in srgb, var(--acc) 20%, transparent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--acc) 40%, transparent); }
+:root[data-style="glow"] #o .seg > button[aria-selected="true"] { color: var(--ink); }
+:root[data-style="glow"] #o :is(.input, input[type="text"], input[type="search"], input[type="email"], input[type="password"], input[type="date"], input[type="time"], input[type="number"], select, textarea):not([type="checkbox"]):not([type="radio"]) {
+  border-radius: 14px; background-color: color-mix(in srgb, var(--ink) 4%, transparent); border-color: color-mix(in srgb, var(--ink) 13%, transparent);
+}
+:root[data-style="glow"] #o :is(.input, input, select, textarea):focus { border-color: var(--acc); box-shadow: 0 0 0 4px color-mix(in srgb, var(--acc) 18%, transparent); outline: none; }
+:root[data-style="glow"] #o .icon-btn { border-radius: 999px; }
+:root[data-style="glow"] #o .o-avatar { box-shadow: 0 0 0 2px color-mix(in srgb, var(--acc) 35%, transparent); }
+:root[data-style="glow"] #o .ragbar, :root[data-style="glow"] #o .ls-time { border-radius: 999px; }
+
+/* ---------- Pages rise in when you open them ---------- */
+:root[data-style="glow"] #o main > .view:not([hidden]):not(#view-social):not(#view-longshot) > * { animation: gx-rise .7s cubic-bezier(.2, .8, .2, 1) both; }
+:root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(2) { animation-delay: .05s; }
+:root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(3) { animation-delay: .1s; }
+:root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(4) { animation-delay: .15s; }
+:root[data-style="glow"] #o main > .view:not([hidden]) > *:nth-child(n+5) { animation-delay: .2s; }
+@keyframes gx-rise { from { opacity: 0; transform: translateY(22px); filter: blur(6px); } to { opacity: 1; transform: none; filter: none; } }
+
+/* ---------- Calm when motion is reduced ---------- */
+:root[data-style="glow"].reduce-motion .gx-orb, :root[data-style="glow"].reduce-motion #o .greeting { animation: none; }
+:root[data-style="glow"].reduce-motion .gx-spot { display: none; }
+:root[data-style="glow"].reduce-motion #o main > .view > * { animation: none !important; }

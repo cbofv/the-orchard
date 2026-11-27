@@ -33,13 +33,19 @@
   }
 
   /* ---------- the extra settings ---------- */
-  const DEFAULTS = { accent: "theme", bold: "off", radius: "default", bg: "grain", density: "default", width: "full", leading: "normal", contrast: "standard", rag: "classic", celebrate: "on", start: "home", keys: "on" };
+  const DEFAULTS = { style: "glow", accent: "theme", bold: "off", radius: "default", bg: "grain", density: "default", width: "full", leading: "normal", contrast: "standard", rag: "classic", celebrate: "on", start: "home", keys: "on" };
   const ATTRS = { accent: "theme", bold: "off", radius: "default", bg: "grain", density: "default", width: "full", leading: "normal", contrast: "standard", rag: "classic", celebrate: "on", keys: "on" };
   function read() { try { return JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { return {}; } }
 
   window.orchardApplyExtras = function (p) {
     p = p || read();
     if (FONTS[p.font] && FONTS[p.font].q) { root.dataset.font = p.font; loadFont(p.font); }
+    // Style: Glow (the homepage look, default) or Basic
+    root.dataset.style = p.style === "basic" ? "basic" : "glow";
+    if (root.dataset.style === "glow" && (!p.font || p.font === "default") && !document.getElementById("font-glow")) {
+      const l = document.createElement("link"); l.rel = "stylesheet"; l.id = "font-glow";
+      l.href = GF + "family=Inter+Tight:wght@300;400;500;600;700;800&display=swap"; document.head.appendChild(l);
+    }
     Object.entries(ATTRS).forEach(([k, def]) => {
       const v = p[k] || def;
       if (v === def) root.removeAttribute("data-" + k); else root.setAttribute("data-" + k, v);
@@ -108,7 +114,11 @@
     const gTheme = byTitle("Theme"), gFont = byTitle("Font"), gSize = byTitle("Text size"), gMotion = byTitle("Motion"), g3d = byTitle("3D effects"), gSide = byTitle("Sidebar");
 
     // Appearance
-    gTheme?.insertAdjacentHTML("beforebegin", section("look", "Appearance"));
+    gTheme?.insertAdjacentHTML("beforebegin", section("look", "Appearance") + group("style", "Style",
+      `<div class="pp-styles">
+        <button type="button" class="pp-style glow" data-pref="style" data-val="glow" aria-pressed="false"><span class="pp-style-pic" aria-hidden="true"><i></i><i></i><i></i></span><b>Glow</b><span>Glass, light and motion, like the homepage</span></button>
+        <button type="button" class="pp-style basic" data-pref="style" data-val="basic" aria-pressed="false"><span class="pp-style-pic" aria-hidden="true"><i></i><i></i><i></i></span><b>Basic</b><span>Flat, simple and still</span></button>
+      </div>`));
     gTheme?.insertAdjacentHTML("afterend", group("accent", "Accent colour",
       `<div class="pp-swatches">${ACCENTS.map(([v, l, c]) => `<button type="button" class="pp-sw" data-pref="accent" data-val="${v}" aria-pressed="false" title="${l}" aria-label="${l} accent"${c ? ` style="--c:${c}"` : ""}><i></i><span>${l}</span></button>`).join("")}</div>`,
       "Changes buttons, highlights and links. “Theme” uses the theme’s own colour."));

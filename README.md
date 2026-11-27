@@ -87,7 +87,7 @@ The Orchard can be installed on phones and computers. On desktop Chrome or Edge,
 
 ## Settings
 Settings (the gear icon) is split into Appearance, Layout, Reading and General, with tabs at the top:
-- **Appearance:** 23 themes (11 light, 12 dark, including Oak to match the app icon), 12 accent colours, 13 fonts (including Easy reading and Hyperlegible for comfortable reading), text size, bold text, corners and a background texture.
+- **Appearance:** Style (**Glow**, the homepage look with glass, light and motion, is the default; **Basic** is the simpler flat look), 23 themes (11 light, 12 dark, including Oak to match the app icon), 12 accent colours, 13 fonts (including Easy reading and Hyperlegible for comfortable reading), text size, bold text, corners and a background texture.
 - **Layout:** density (compact, comfortable, spacious) and content width on wide screens.
 - **Reading and accessibility:** line spacing (with a dyslexia-friendly option), high contrast, colour-blind-safe rating colours, motion, 3D effects and celebrations.
 - **General:** start page (including "where I left off"), keyboard shortcuts on or off, sidebar order and a reset button.
@@ -129,6 +129,7 @@ On a phone, The Orchard switches to a layout made for it (`phone.js`, `phone.css
 | `supabase-social-4.sql` | Study rooms, announcements and admin stats |
 | `manifest.webmanifest`, `sw.js`, `icon-*.png` | Installable app: manifest, offline support and icons |
 | `ui.js`, `ui.css` | The interface layer: header, sidebar, layouts and subject page extras |
+| `glow.js`, `glow.css` | The Glow style (the default look) |
 | `prefs.js`, `prefs.css` | Extra themes, fonts and settings |
 | `game.js`, `game.css`, `game-prompts.js` | The Long Shot game and its prompts |
 | `phone.js`, `phone.css` | Phone mode (see above) |
