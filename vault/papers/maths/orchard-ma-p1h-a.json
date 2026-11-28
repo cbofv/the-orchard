@@ -1,0 +1,268 @@
+{
+  "schema": 1,
+  "id": "orchard-ma-p1h-a",
+  "official": false,
+  "subject": "Maths",
+  "qualification": "GCSE",
+  "board": "AQA",
+  "spec": "8300",
+  "tier": "Higher",
+  "year": 2026,
+  "series": "Orchard practice set A",
+  "paper": "Paper 1",
+  "paperNum": 1,
+  "title": "Non-calculator",
+  "minutes": 35,
+  "calculator": false,
+  "totalMarks": 32,
+  "boundaries": {
+    "note": "Scaled from the June 2026 Higher boundaries used on the Maths page. A rough guide only.",
+    "grades": { "9": 29, "8": 26, "7": 22, "6": 17, "5": 13, "4": 8 }
+  },
+  "instructions": [
+    "Answer all questions in the spaces provided.",
+    "You must show your working.",
+    "You may not use a calculator.",
+    "This is a shortened Orchard practice paper in the AQA Paper 1 style. It is not an official AQA paper."
+  ],
+  "questions": [
+    {
+      "n": "1",
+      "parts": [
+        {
+          "id": "1", "label": "1", "marks": 1, "type": "mcq",
+          "text": "Write 3.2 × 10^{−3} as an ordinary number.",
+          "options": [
+            { "key": "A", "text": "0.0032" },
+            { "key": "B", "text": "0.032" },
+            { "key": "C", "text": "3200" },
+            { "key": "D", "text": "−3200" }
+          ],
+          "pick": 1,
+          "topics": ["ma/mpow/standard-form/standard-form"],
+          "scheme": { "correct": ["A"], "guidance": "A negative power of 10 makes the number smaller: move the decimal point 3 places left." }
+        }
+      ]
+    },
+    {
+      "n": "2",
+      "parts": [
+        {
+          "id": "2", "label": "2", "marks": 3, "type": "calc",
+          "text": "Work out 2¾ ÷ 1½\n\nGive your answer as a mixed number in its simplest form.",
+          "topics": ["ma/mnum/calculating/fractions"],
+          "scheme": {
+            "numeric": { "value": "11/6", "tolerance": 0, "form": "mixed" },
+            "answers": ["1 5/6"],
+            "points": [
+              { "text": "Converts to improper fractions: 11/4 and 3/2" },
+              { "text": "Multiplies by the reciprocal: 11/4 × 2/3, or 22/12" },
+              { "text": "1 5/6" }
+            ],
+            "guidance": "11/6 or 22/12 gets 2 marks: the final mark needs a mixed number in its simplest form."
+          }
+        }
+      ]
+    },
+    {
+      "n": "3",
+      "parts": [
+        {
+          "id": "3", "label": "3", "marks": 2, "type": "calc",
+          "text": "Solve 5x − 7 = 2x + 11",
+          "prefix": "x =",
+          "topics": ["ma/meq/linear-equations/linear-equations"],
+          "scheme": {
+            "numeric": { "value": 6, "tolerance": 0 },
+            "points": [
+              { "text": "Collects terms correctly: 3x = 18" },
+              { "text": "x = 6" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "n": "4",
+      "parts": [
+        {
+          "id": "4-a", "label": "4(a)", "marks": 2, "type": "short",
+          "text": "Factorise x^{2} − 5x − 14",
+          "lines": 2,
+          "topics": ["ma/malg/factorising/factorising-quadratics"],
+          "scheme": {
+            "exact": ["(x-7)(x+2)", "(x+2)(x-7)"],
+            "points": [
+              { "text": "(x ± 7)(x ± 2) or a pair of numbers that multiply to −14 and add to −5" },
+              { "text": "(x − 7)(x + 2)" }
+            ]
+          }
+        },
+        {
+          "id": "4-b", "label": "4(b)", "marks": 2, "type": "short",
+          "text": "Expand and simplify (x + 3)(x − 5)",
+          "lines": 2,
+          "topics": ["ma/malg/expressions/expanding-brackets"],
+          "scheme": {
+            "exact": ["x^2-2x-15", "x²-2x-15"],
+            "points": [
+              { "text": "Three of the four terms x², −5x, 3x, −15 correct" },
+              { "text": "x² − 2x − 15" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "n": "5",
+      "parts": [
+        {
+          "id": "5", "label": "5", "marks": 2, "type": "calc",
+          "text": "Work out the value of 27^{⅔}",
+          "topics": ["ma/mpow/indices/negative-and-fractional-indices"],
+          "scheme": {
+            "numeric": { "value": 9, "tolerance": 0 },
+            "points": [
+              { "text": "Cube root of 27 is 3, or 27² = 729" },
+              { "text": "9" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "n": "6",
+      "parts": [
+        {
+          "id": "6", "label": "6", "marks": 3, "type": "calc",
+          "text": "Amy and Ben share £84 in the ratio 2 : 5\n\nHow much more money does Ben get than Amy?",
+          "prefix": "£",
+          "topics": ["ma/mrat/ratio/sharing-in-a-ratio"],
+          "scheme": {
+            "numeric": { "value": 36, "tolerance": 0 },
+            "points": [
+              { "text": "84 ÷ 7 = 12 (one part)" },
+              { "text": "Amy gets £24 and Ben gets £60, or 3 parts difference" },
+              { "text": "£36" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "n": "7",
+      "figures": [
+        { "type": "image", "src": "vault/img/ma-right-triangle.svg", "alt": "A right-angled triangle. The two shorter sides are 8 cm and 15 cm. The longest side is labelled x.", "caption": "Not drawn accurately", "lineArt": true }
+      ],
+      "parts": [
+        {
+          "id": "7", "label": "7", "marks": 3, "type": "calc",
+          "text": "Work out the length x.",
+          "prefix": "x =", "units": "cm",
+          "topics": ["ma/mtri/right-angled-triangles/pythagoras-theorem"],
+          "scheme": {
+            "numeric": { "value": 17, "tolerance": 0 },
+            "points": [
+              { "text": "8² + 15² seen, or 64 + 225" },
+              { "text": "289" },
+              { "text": "17 (cm)" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "n": "8",
+      "parts": [
+        {
+          "id": "8", "label": "8", "marks": 3, "type": "calc",
+          "text": "A bag has 5 red counters and 3 blue counters.\n\nTwo counters are taken at random, without replacement.\n\nWork out the probability that both counters are red. Give your answer as a fraction in its simplest form.",
+          "topics": ["ma/mprob/diagrams/tree-diagrams", "ma/mprob/conditional-probability/conditional-probability"],
+          "scheme": {
+            "numeric": { "value": "5/14", "tolerance": 0, "form": "fraction" },
+            "points": [
+              { "text": "5/8 for the first counter" },
+              { "text": "× 4/7 for the second counter" },
+              { "text": "5/14" }
+            ],
+            "guidance": "20/56 unsimplified gets 2 marks."
+          }
+        }
+      ]
+    },
+    {
+      "n": "9",
+      "parts": [
+        {
+          "id": "9", "label": "9", "marks": 3, "type": "short",
+          "text": "Prove that the sum of any three consecutive integers is a multiple of 3.",
+          "lines": 6,
+          "topics": ["ma/malg/proof/identities-and-algebraic-proof"],
+          "scheme": {
+            "points": [
+              { "text": "Uses algebra for three consecutive integers, e.g. n, n + 1, n + 2" },
+              { "text": "Adds them to get 3n + 3" },
+              { "text": "Writes 3(n + 1) and states that this is a multiple of 3" }
+            ],
+            "guidance": "Numerical examples alone get 0 marks. The final mark needs both the factorised form and a conclusion."
+          }
+        }
+      ]
+    },
+    {
+      "n": "10",
+      "parts": [
+        {
+          "id": "10", "label": "10", "marks": 3, "type": "diagram",
+          "text": "Draw the graph of y = 2x − 1 for values of x from −1 to 3.",
+          "background": "grid",
+          "topics": ["ma/mgr/straight-lines/gradient-and-y-mx-c"],
+          "scheme": {
+            "points": [
+              { "text": "At least two correct points, e.g. (0, −1) and (1, 1)" },
+              { "text": "All points correct: (−1, −3), (0, −1), (1, 1), (2, 3), (3, 5)" },
+              { "text": "A single straight line through the points from x = −1 to x = 3" }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "n": "11",
+      "parts": [
+        {
+          "id": "11", "label": "11", "marks": 3, "type": "calc",
+          "text": "By rounding each number to 1 significant figure, estimate the value of\n\n(49.7 × 3.1) ÷ 0.52",
+          "topics": ["ma/macc/rounding/estimation"],
+          "scheme": {
+            "numeric": { "value": 300, "tolerance": 0 },
+            "points": [
+              { "text": "Rounds all three: 50, 3 and 0.5" },
+              { "text": "150 ÷ 0.5, or 50 × 6" },
+              { "text": "300" }
+            ],
+            "guidance": "The exact answer (about 296) gets 0 marks: the method must be an estimate."
+          }
+        }
+      ]
+    },
+    {
+      "n": "12",
+      "parts": [
+        {
+          "id": "12", "label": "12", "marks": 2, "type": "calc",
+          "text": "f(x) = 3x + 1 and g(x) = x^{2}\n\nWork out fg(2).",
+          "topics": ["ma/mseq/functions/composite-and-inverse-functions"],
+          "scheme": {
+            "numeric": { "value": 13, "tolerance": 0 },
+            "points": [
+              { "text": "g(2) = 4" },
+              { "text": "13" }
+            ],
+            "guidance": "gf(2) = 49 gets 0 marks."
+          }
+        }
+      ]
+    }
+  ]
+}

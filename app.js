@@ -6,6 +6,7 @@ const TABS = [
   { id: "exams", label: "Exams" },
   { id: "grades",   label: "Grades" },
   { id: "past-papers", label: "Past papers" },
+  { id: "vault", label: "The Vault" },
   { id: "study-log", label: "Study log" },
   { id: "quests", label: "Quests", group: "Tools" },
   { id: "guide", label: "The Guide", group: "Tools" },
@@ -31,6 +32,7 @@ const NAV_ICONS = {
   grades: '<path d="M5 20v-7M12 20V5M19 20v-10"/><path d="M3 20h18"/>',
   "past-papers": '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5"/><path d="m9.5 14.5 2 2 4-4.5"/>',
   "study-log": '<circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/>',
+  vault: '<rect x="3.5" y="4.5" width="17" height="14.5" rx="2.5"/><circle cx="12" cy="11.75" r="3.4"/><path d="M12 8.35v1.2M12 13.95v1.2M8.6 11.75h1.2M14.2 11.75h1.2M7 19v1.5M17 19v1.5"/>',
   quests: '<path d="M6 21V4"/><path d="M6 4.5c4-2.5 7 2.5 12 0v8.5c-5 2.5-8-2.5-12 0"/>',
   guide: '<circle cx="12" cy="12" r="8.5"/><path d="m15.5 8.5-2 5-5 2 2-5z"/>',
   longshot: '<path d="M12 8.2c-1.6-1.2-5.6-1.2-6.2 3-.5 3.6 2.3 7.6 4.3 7.6.9 0 1.2-.5 1.9-.5s1 .5 1.9.5c2 0 4.8-4 4.3-7.6-.6-4.2-4.6-4.2-6.2-3z"/><path d="M12 8V5.5c0-1 .6-2 1.6-2.3"/><path d="M19 3.5l.6 1.4 1.4.6-1.4.6-.6 1.4-.6-1.4-1.4-.6 1.4-.6z"/>',
@@ -65,7 +67,7 @@ document.addEventListener("keydown", e => {
 nav.addEventListener("click", e => { if (e.target.closest("a")) setMenu(false); });
 
 function route() {
-  const want = (location.hash || "#home").slice(1);
+  const want = (location.hash || "#home").slice(1).split("/")[0]; // "#vault/paper/x" opens the Vault tab
   const id = TABS.some(t => t.id === want) ? want : "home";
   TABS.forEach(t => { const v = document.getElementById("view-" + t.id); if (v) v.hidden = t.id !== id; });
   nav.querySelectorAll("a").forEach(a =>
@@ -10726,7 +10728,7 @@ function renderNav() {
     const t = TABS.find(t => t.id === x);
     return `<a href="#${t.id}" data-tab="${t.id}" data-nav="${t.id}" style="--i:${i}">${navIcon(t.id)}<span>${esc(t.label)}</span><i class="grip" aria-hidden="true"></i></a>`;
   }).join("");
-  const id = (location.hash || "#home").slice(1);
+  const id = (location.hash || "#home").slice(1).split("/")[0];
   nav.querySelectorAll("a").forEach(a => a.dataset.tab === id ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"));
 }
 function saveNavOrder() {

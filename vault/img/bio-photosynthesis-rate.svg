@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 250" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="none" stroke="#000">
+  <title>Rate of photosynthesis against light intensity</title>
+  <path d="M60 20v190h280" stroke-width="1.6"/>
+  <path d="M60 210c40-70 70-120 120-138s100-10 150-10" stroke-width="2.4" stroke-linecap="round"/>
+  <g fill="#000" stroke="none">
+    <text x="200" y="240" text-anchor="middle">Light intensity</text>
+    <text transform="translate(28 115) rotate(-90)" text-anchor="middle">Rate of photosynthesis</text>
+    <text x="52" y="214" text-anchor="end">0</text>
+  </g>
+</svg>

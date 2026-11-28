@@ -15,7 +15,7 @@
   const crumbs = el("div", { className: "o-crumbs", ariaLive: "polite" });
   topbar.insertBefore(crumbs, dock);
   function updateCrumbs() {
-    const id = (location.hash || "#home").slice(1);
+    const id = (location.hash || "#home").slice(1).split("/")[0];
     const t = tabs.find(x => x.id === id) || tabs[0] || { label: "Home" };
     const group = t.group || "The Orchard";
     crumbs.innerHTML = `<span>${escH(group)}</span><i aria-hidden="true"></i><b>${escH(t.label)}</b>`;

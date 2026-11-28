@@ -1,0 +1,213 @@
+{
+  "schema": 1,
+  "id": "orchard-psy-p1-a",
+  "official": false,
+  "subject": "Psychology",
+  "qualification": "GCSE",
+  "board": "AQA",
+  "spec": "8182",
+  "tier": null,
+  "year": 2026,
+  "series": "Orchard practice set A",
+  "paper": "Paper 1",
+  "paperNum": 1,
+  "title": "Cognition and behaviour: memory and research methods",
+  "minutes": 35,
+  "calculator": true,
+  "totalMarks": 30,
+  "boundaries": {
+    "note": "Estimated: scaled from typical AQA Psychology boundaries. A rough guide only.",
+    "grades": { "9": 23, "8": 21, "7": 18, "6": 16, "5": 13, "4": 11, "3": 8 }
+  },
+  "instructions": [
+    "Answer all questions.",
+    "Use the item to help you answer question 02.",
+    "This is a shortened Orchard practice paper in the AQA Paper 1 style. It is not an official AQA paper."
+  ],
+  "sources": [
+    {
+      "id": "item-a", "title": "Item A",
+      "body": "A psychologist wanted to find out whether background music affects how many words people can recall.\n\nTwenty students each learned a list of 20 words in silence and then wrote down as many as they could remember. A week later, the same students learned a different list of 20 words while pop music played, and again wrote down as many as they could remember.",
+      "figures": [
+        {
+          "type": "table", "caption": "Table 1: Mean number of words recalled",
+          "head": ["Condition", "Mean words recalled (out of 20)"],
+          "rows": [["Silence", "14"], ["Music", "10"]]
+        }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "n": "01",
+      "stem": "This question is about memory.",
+      "parts": [
+        {
+          "id": "01-1", "label": "01.1", "marks": 1, "type": "mcq",
+          "text": "Which type of long-term memory stores how to ride a bike?",
+          "options": [
+            { "key": "A", "text": "Episodic memory" },
+            { "key": "B", "text": "Procedural memory" },
+            { "key": "C", "text": "Semantic memory" },
+            { "key": "D", "text": "Sensory memory" }
+          ],
+          "pick": 1,
+          "topics": ["psy/pmem/processes-of-memory/types-of-long-term-memory"],
+          "scheme": { "correct": ["B"], "guidance": "Procedural memories are memories of how to do things, and can be recalled without conscious effort." }
+        },
+        {
+          "id": "01-2", "label": "01.2", "marks": 2, "type": "short",
+          "text": "Explain the difference between episodic memory and semantic memory.",
+          "lines": 4,
+          "topics": ["psy/pmem/processes-of-memory/types-of-long-term-memory"],
+          "scheme": {
+            "points": [
+              { "text": "Episodic memory is memory of personal experiences or events, linked to a time and place (e.g. your last birthday)" },
+              { "text": "Semantic memory is memory of facts and knowledge, not tied to when you learned them (e.g. Paris is the capital of France)" }
+            ],
+            "guidance": "One mark for each type correctly explained. The difference must be clear: a description of only one type gets 1 mark."
+          }
+        },
+        {
+          "id": "01-3", "label": "01.3", "marks": 4, "type": "short",
+          "text": "Describe Murdock's (1962) study of the serial position effect.",
+          "lines": 8,
+          "topics": ["psy/pmem/structures-of-memory/murdock-1962-the-serial-position-effect"],
+          "scheme": {
+            "points": [
+              { "text": "Participants were read lists of words (about 20 words) one at a time" },
+              { "text": "They recalled the words in any order (free recall)" },
+              { "text": "Words at the start of the list were recalled well: the primacy effect" },
+              { "text": "Words at the end of the list were recalled well: the recency effect" },
+              { "text": "Words in the middle were recalled least well" },
+              { "text": "Conclusion: supports separate short-term and long-term stores, as in the multi-store model" }
+            ],
+            "max": 4,
+            "guidance": "Credit method, results and conclusion. Up to 2 marks for method only."
+          }
+        },
+        {
+          "id": "01-4", "label": "01.4", "marks": 9, "type": "extended",
+          "text": "Describe and evaluate the multi-store model of memory.",
+          "lines": 22,
+          "topics": ["psy/pmem/structures-of-memory/the-multi-store-model", "psy/pmem/structures-of-memory/capacity-and-duration-of-stm-and-ltm"],
+          "scheme": {
+            "levels": [
+              { "level": 3, "min": 7, "max": 9, "descriptor": "Knowledge of the model is accurate and generally well detailed. Evaluation is effective, with clear links to evidence. The answer is clear and organised, using specialist terms effectively." },
+              { "level": 2, "min": 4, "max": 6, "descriptor": "Knowledge of the model is evident, with some detail. Evaluation is mostly effective, though some points may be underdeveloped. The answer is mostly clear and organised, with some specialist terms." },
+              { "level": 1, "min": 1, "max": 3, "descriptor": "Knowledge is limited and may contain inaccuracies. Evaluation is limited, poorly focused or absent. Specialist terms are absent or used inappropriately." }
+            ],
+            "indicative": [
+              "Description: three separate stores: sensory memory, short-term memory and long-term memory",
+              "Information moves between stores in one direction; attention moves it from sensory memory to STM",
+              "Rehearsal keeps information in STM and transfers it to LTM; information not rehearsed is lost",
+              "STM has a capacity of about 7 ± 2 items and a duration of about 18–30 seconds; LTM has unlimited capacity and duration",
+              "Evaluation: Murdock's serial position effect supports separate STM and LTM stores",
+              "Evaluation: case studies such as HM show STM and LTM can be damaged separately",
+              "Evaluation: the model is too simple: STM and LTM are probably not single unitary stores",
+              "Evaluation: rehearsal is not always needed; some things enter LTM without it (e.g. flashbulb memories)",
+              "Evaluation: much of the evidence uses artificial lab tasks with low ecological validity"
+            ],
+            "guidance": "0 marks: no relevant content. An answer with description only cannot go above Level 2 (4 marks); an answer with evaluation only cannot go above Level 1."
+          }
+        }
+      ]
+    },
+    {
+      "n": "02",
+      "source": "item-a",
+      "stem": "Read **Item A**.",
+      "parts": [
+        {
+          "id": "02-1", "label": "02.1", "marks": 1, "type": "short",
+          "text": "Identify the independent variable in this study.",
+          "lines": 1,
+          "topics": ["psy/prm/planning-research/variables"],
+          "scheme": {
+            "points": [{ "text": "Whether music was played or not / silence or music while learning" }],
+            "guidance": "Do not accept \"music\" on its own."
+          }
+        },
+        {
+          "id": "02-2", "label": "02.2", "marks": 2, "type": "short",
+          "text": "Write a directional hypothesis for this study.",
+          "lines": 3,
+          "topics": ["psy/prm/planning-research/hypotheses"],
+          "scheme": {
+            "points": [
+              { "text": "States a direction, e.g. more words will be recalled in silence than with music" },
+              { "text": "Both variables clearly operationalised: number of words recalled from a list of 20, and silence versus pop music" }
+            ],
+            "guidance": "A non-directional hypothesis gets a maximum of 1 mark."
+          }
+        },
+        {
+          "id": "02-3", "label": "02.3", "marks": 1, "type": "mcq",
+          "text": "Which experimental design was used?",
+          "options": [
+            { "key": "A", "text": "Independent groups" },
+            { "key": "B", "text": "Matched pairs" },
+            { "key": "C", "text": "Repeated measures" },
+            { "key": "D", "text": "Natural experiment" }
+          ],
+          "pick": 1,
+          "topics": ["psy/prm/planning-research/experimental-designs"],
+          "scheme": { "correct": ["C"], "guidance": "The same students took part in both conditions." }
+        },
+        {
+          "id": "02-4", "label": "02.4", "marks": 2, "type": "short",
+          "text": "Explain one disadvantage of using this design in this study.",
+          "lines": 4,
+          "topics": ["psy/prm/planning-research/experimental-designs"],
+          "scheme": {
+            "points": [
+              { "text": "Identifies an order effect: practice, fatigue or boredom" },
+              { "text": "Explains it in context, e.g. students may have got better at learning word lists by the second (music) condition, so recall with music could be affected by practice rather than by the music" }
+            ],
+            "guidance": "Accept demand characteristics: students may guess the aim after doing both conditions. The second mark needs a link to this study."
+          }
+        },
+        {
+          "id": "02-5", "label": "02.5", "marks": 2, "type": "calc",
+          "text": "In the silence condition, 15 of the 20 students recalled more than 12 words.\n\nWhat percentage of the students is this?",
+          "units": "%",
+          "topics": ["psy/prm/data-handling/maths-skills"],
+          "scheme": {
+            "numeric": { "value": 75, "tolerance": 0 },
+            "points": [
+              { "text": "15 ÷ 20 (× 100), or 0.75" },
+              { "text": "75 (%)" }
+            ]
+          }
+        },
+        {
+          "id": "02-6", "label": "02.6", "marks": 4, "type": "diagram",
+          "text": "Draw a suitable graph to show the results in **Table 1**.",
+          "background": "grid",
+          "topics": ["psy/prm/data-handling/graphs-and-tables"],
+          "scheme": {
+            "points": [
+              { "text": "Bar chart chosen (data are in separate categories)" },
+              { "text": "Bars drawn accurately: silence at 14 and music at 10, with a suitable scale" },
+              { "text": "Both axes labelled: condition on the x-axis, mean number of words recalled on the y-axis" },
+              { "text": "Bars separated by gaps, and the graph has a suitable title" }
+            ],
+            "guidance": "A line graph or histogram gets a maximum of 2 marks."
+          }
+        },
+        {
+          "id": "02-7", "label": "02.7", "marks": 2, "type": "short",
+          "text": "Explain why the psychologist should tell the students that they have the right to withdraw.",
+          "lines": 4,
+          "topics": ["psy/prm/planning-research/ethics"],
+          "scheme": {
+            "points": [
+              { "text": "Students can leave the study at any time, and remove their results" },
+              { "text": "Explanation, e.g. students may feel stressed or embarrassed if they remember few words, so they should not feel pressured to continue" }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="none" stroke="#000">
+  <title>Right-angled triangle with sides 8 cm, 15 cm and x</title>
+  <path d="M40 160h220V40z" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M244 160v-16h16" stroke-width="1.4"/>
+  <g fill="#000" stroke="none">
+    <text x="150" y="184" text-anchor="middle">15 cm</text>
+    <text x="270" y="104">8 cm</text>
+    <text x="136" y="88" font-style="italic">x</text>
+  </g>
+</svg>

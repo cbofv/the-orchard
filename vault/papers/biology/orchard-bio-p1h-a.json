@@ -1,0 +1,271 @@
+{
+  "schema": 1,
+  "id": "orchard-bio-p1h-a",
+  "official": false,
+  "subject": "Biology",
+  "qualification": "GCSE",
+  "board": "AQA",
+  "spec": "8461",
+  "tier": "Higher",
+  "year": 2026,
+  "series": "Orchard practice set A",
+  "paper": "Paper 1",
+  "paperNum": 1,
+  "title": "Cells, organisation, infection and bioenergetics",
+  "minutes": 35,
+  "calculator": true,
+  "totalMarks": 30,
+  "boundaries": {
+    "note": "Estimated: scaled from typical AQA Higher boundaries. A rough guide only.",
+    "grades": { "9": 23, "8": 20, "7": 17, "6": 14, "5": 11, "4": 8, "3": 6 }
+  },
+  "instructions": [
+    "Answer all questions in the spaces provided.",
+    "Show your working in calculations.",
+    "You may use a calculator.",
+    "This is a shortened Orchard practice paper in the AQA Paper 1 style. It is not an official AQA paper."
+  ],
+  "questions": [
+    {
+      "n": "01",
+      "stem": "This question is about cells.",
+      "parts": [
+        {
+          "id": "01-1", "label": "01.1", "marks": 1, "type": "mcq",
+          "text": "Which structure is found in a bacterial cell but **not** in an animal cell?",
+          "options": [
+            { "key": "A", "text": "Cell membrane" },
+            { "key": "B", "text": "Mitochondrion" },
+            { "key": "C", "text": "Plasmid" },
+            { "key": "D", "text": "Ribosome" }
+          ],
+          "pick": 1,
+          "topics": ["bio/bcell/cell-structure/eukaryotic-and-prokaryotic-cells"],
+          "scheme": {
+            "correct": ["C"],
+            "guidance": "Plasmids are small rings of DNA found in prokaryotic cells. Animal cells have a cell membrane, mitochondria and ribosomes too."
+          }
+        },
+        {
+          "id": "01-2", "label": "01.2", "marks": 2, "type": "calc",
+          "text": "A student draws a cheek cell seen through a light microscope. The cell is 18 mm long in the drawing. The magnification is ×1500.\n\nCalculate the real length of the cell in micrometres (µm).",
+          "units": "µm",
+          "topics": ["bio/bcell/cell-structure/microscopy-and-magnification"],
+          "scheme": {
+            "numeric": { "value": 12, "tolerance": 0 },
+            "answers": ["12 µm"],
+            "points": [
+              { "text": "Converts 18 mm to 18 000 µm, or divides 18 by 1500 (0.012 mm)" },
+              { "text": "12 (µm)" }
+            ],
+            "guidance": "Real size = image size ÷ magnification. An answer of 0.012 with no unit conversion gets 1 mark."
+          }
+        },
+        {
+          "id": "01-3", "label": "01.3", "marks": 2, "type": "short",
+          "text": "Ribosomes can be seen with an electron microscope but not with a light microscope.\n\nExplain why.",
+          "lines": 4,
+          "topics": ["bio/bcell/cell-structure/microscopy-and-magnification"],
+          "scheme": {
+            "points": [
+              { "text": "An electron microscope has a higher resolution (resolving power)" },
+              { "text": "So it can distinguish between two points that are very close together / ribosomes are smaller than the smallest detail a light microscope can show" }
+            ],
+            "guidance": "Higher magnification alone does not get the first mark: the answer must refer to resolution."
+          }
+        }
+      ]
+    },
+    {
+      "n": "02",
+      "stem": "A student investigated osmosis in potato tissue.\n\nThe student put cylinders of potato into sugar solutions of different concentrations for 30 minutes. They measured the mass of each cylinder before and after.\n\n**Table 1** shows the results.",
+      "figures": [
+        {
+          "type": "table", "caption": "Table 1",
+          "head": ["Concentration of sugar solution in mol/dm³", "Percentage change in mass"],
+          "rows": [["0.0", "+12.5"], ["0.2", "+5.1"], ["0.4", "−1.8"], ["0.6", "−8.4"], ["0.8", "−14.0"]]
+        }
+      ],
+      "parts": [
+        {
+          "id": "02-1", "label": "02.1", "marks": 1, "type": "short",
+          "text": "Name the independent variable in this investigation.",
+          "lines": 1,
+          "topics": ["bio/brp/paper-1-practicals/osmosis"],
+          "scheme": {
+            "answers": ["The concentration of the sugar solution"],
+            "points": [{ "text": "Concentration of (sugar) solution" }],
+            "guidance": "Do not accept \"sugar\" or \"the solution\" on their own."
+          }
+        },
+        {
+          "id": "02-2", "label": "02.2", "marks": 2, "type": "calc",
+          "text": "One cylinder in the 0.0 mol/dm³ solution had a starting mass of 2.40 g. Its final mass was 2.70 g.\n\nCalculate the percentage change in mass.",
+          "units": "%",
+          "topics": ["bio/brp/paper-1-practicals/osmosis", "bio/bsk/doing-well/maths-skills"],
+          "scheme": {
+            "numeric": { "value": 12.5, "tolerance": 0.05 },
+            "points": [
+              { "text": "(2.70 − 2.40) ÷ 2.40 (× 100), or change in mass = 0.30 g" },
+              { "text": "12.5 (%)" }
+            ],
+            "guidance": "Allow +12.5. An answer of 0.125 gets 1 mark."
+          }
+        },
+        {
+          "id": "02-3", "label": "02.3", "marks": 1, "type": "calc",
+          "text": "Use **Table 1** to estimate the concentration of the solution inside the potato cells.",
+          "units": "mol/dm³",
+          "topics": ["bio/bcell/transport-in-cells/osmosis"],
+          "scheme": {
+            "numeric": { "value": 0.35, "tolerance": 0.04 },
+            "points": [{ "text": "Any value from 0.31 to 0.39 (mol/dm³)" }],
+            "guidance": "The concentration where there is no change in mass lies between 0.2 and 0.4, closer to 0.4."
+          }
+        },
+        {
+          "id": "02-4", "label": "02.4", "marks": 3, "type": "short",
+          "text": "Explain why the potato cylinders in the 0.8 mol/dm³ solution lost mass.",
+          "lines": 6,
+          "topics": ["bio/bcell/transport-in-cells/osmosis"],
+          "scheme": {
+            "points": [
+              { "text": "The solution outside is more concentrated than the cell contents / the cells have a higher water concentration than the solution" },
+              { "text": "Water moves out of the cells by osmosis" },
+              { "text": "Through a partially permeable (cell) membrane" },
+              { "text": "From a dilute solution to a more concentrated solution" }
+            ],
+            "max": 3,
+            "guidance": "Any three points. \"Sugar moves out\" or \"water moves in\" cancels the osmosis mark."
+          }
+        }
+      ]
+    },
+    {
+      "n": "03",
+      "stem": "Enzymes speed up reactions in the digestive system.",
+      "parts": [
+        {
+          "id": "03-1", "label": "03.1", "marks": 3, "type": "diagram",
+          "text": "Sketch a graph to show how the rate of an enzyme-controlled reaction changes as temperature increases from 0 °C to 60 °C.\n\nLabel the optimum temperature on your graph.",
+          "background": "grid",
+          "topics": ["bio/borg/digestion/factors-affecting-enzymes"],
+          "scheme": {
+            "points": [
+              { "text": "Rate increases gradually as temperature increases, up to a peak" },
+              { "text": "Peak labelled as the optimum, at about 35–45 °C" },
+              { "text": "Rate falls steeply after the peak, reaching zero (or near zero) before 60 °C" }
+            ],
+            "guidance": "Axes do not need numbers, but the optimum must be marked. A symmetrical curve loses the third mark."
+          }
+        },
+        {
+          "id": "03-2", "label": "03.2", "marks": 2, "type": "short",
+          "text": "Explain why the rate of reaction decreases above the optimum temperature.",
+          "lines": 4,
+          "topics": ["bio/borg/digestion/enzymes-and-the-lock-and-key-model", "bio/borg/digestion/factors-affecting-enzymes"],
+          "scheme": {
+            "points": [
+              { "text": "The enzyme is denatured / the shape of the active site changes" },
+              { "text": "So the substrate no longer fits the active site / fewer enzyme–substrate complexes form" }
+            ],
+            "guidance": "Do not accept \"the enzyme is killed\"."
+          }
+        }
+      ]
+    },
+    {
+      "n": "04",
+      "stem": "This question is about defending the body against disease.",
+      "parts": [
+        {
+          "id": "04-1", "label": "04.1", "marks": 2, "type": "mcq",
+          "text": "Which **two** of these are non-specific defences of the human body?",
+          "options": [
+            { "key": "A", "text": "Antibodies" },
+            { "key": "B", "text": "Skin" },
+            { "key": "C", "text": "Stomach acid" },
+            { "key": "D", "text": "Memory cells" },
+            { "key": "E", "text": "Antitoxins" }
+          ],
+          "pick": 2,
+          "topics": ["bio/binf/fighting-disease/non-specific-defences"],
+          "scheme": {
+            "correct": ["B", "C"],
+            "guidance": "1 mark for each correct answer. If more than two boxes are ticked, each extra wrong tick cancels a correct one."
+          }
+        },
+        {
+          "id": "04-2", "label": "04.2", "marks": 6, "type": "extended",
+          "text": "Measles is a disease caused by a virus.\n\nExplain how vaccination protects a person from measles.",
+          "lines": 14,
+          "topics": ["bio/binf/fighting-disease/vaccination", "bio/binf/fighting-disease/the-immune-system"],
+          "scheme": {
+            "levels": [
+              { "level": 3, "min": 5, "max": 6, "descriptor": "A detailed, coherent explanation that links the vaccine to the production of antibodies and memory cells, and explains why a second infection is dealt with faster, in a logical sequence." },
+              { "level": 2, "min": 3, "max": 4, "descriptor": "A clear description of what is in the vaccine and how white blood cells respond, with some explanation of why the person does not become ill." },
+              { "level": 1, "min": 1, "max": 2, "descriptor": "Simple, separate statements about vaccination or the immune response, with little linking." }
+            ],
+            "indicative": [
+              "The vaccine contains a small amount of dead or inactive (weakened) measles virus",
+              "The virus has antigens on its surface",
+              "White blood cells (lymphocytes) detect the antigens",
+              "Lymphocytes produce specific antibodies that are complementary to the antigens",
+              "Memory cells are produced",
+              "If the live measles virus enters the body later, memory cells recognise its antigens",
+              "Antibodies are produced more rapidly and in greater numbers (secondary response)",
+              "The virus is destroyed before it can cause symptoms, so the person does not become ill"
+            ],
+            "guidance": "0 marks: nothing worthy of credit. To reach Level 3 the answer must explain the role of memory cells in a faster, larger response."
+          }
+        }
+      ]
+    },
+    {
+      "n": "05",
+      "stem": "Plants make glucose by photosynthesis.",
+      "figures": [
+        { "type": "image", "src": "vault/img/bio-photosynthesis-rate.svg", "alt": "A graph of rate of photosynthesis against light intensity. The rate rises steeply at first, then levels off at higher light intensities.", "caption": "Figure 1", "lineArt": true }
+      ],
+      "parts": [
+        {
+          "id": "05-1", "label": "05.1", "marks": 2, "type": "short",
+          "text": "Complete the word equation for photosynthesis.",
+          "lines": 2,
+          "topics": ["bio/bbio/photosynthesis/photosynthesis"],
+          "scheme": {
+            "answers": ["carbon dioxide + water → glucose + oxygen"],
+            "points": [
+              { "text": "Carbon dioxide + water (on the left)" },
+              { "text": "Glucose + oxygen (on the right)" }
+            ],
+            "guidance": "Accept the reactants or products in either order. Light may be written over the arrow. Do not accept chemical formulae that are wrong."
+          }
+        },
+        {
+          "id": "05-2", "label": "05.2", "marks": 1, "type": "calc",
+          "text": "A lamp is moved from 10 cm to 20 cm away from a plant.\n\nLight intensity is inversely proportional to the square of the distance.\n\nBy what factor does the light intensity change? Give your answer as a decimal.",
+          "topics": ["bio/bbio/photosynthesis/inverse-square-law-and-light"],
+          "scheme": {
+            "numeric": { "value": 0.25, "tolerance": 0 },
+            "points": [{ "text": "0.25 (it falls to a quarter)" }],
+            "guidance": "Accept 1/4 or \"a quarter\"."
+          }
+        },
+        {
+          "id": "05-3", "label": "05.3", "marks": 2, "type": "short",
+          "text": "Look at **Figure 1**.\n\nExplain why the rate of photosynthesis stops increasing at high light intensities.",
+          "lines": 4,
+          "topics": ["bio/bbio/photosynthesis/rate-of-photosynthesis"],
+          "scheme": {
+            "points": [
+              { "text": "Light intensity is no longer the limiting factor / another factor is now limiting" },
+              { "text": "Named factor: carbon dioxide concentration, temperature or amount of chlorophyll" }
+            ],
+            "guidance": "\"Not enough water\" does not get the second mark."
+          }
+        }
+      ]
+    }
+  ]
+}
