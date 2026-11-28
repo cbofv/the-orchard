@@ -89,7 +89,8 @@
   }
 
   /* ---------- saved progress ---------- */
-  const S = { mode: "loading", attempts: {}, prefs: {}, col: null, prefsDoc: null };
+  const S = { mode: "loading", attempts: {}, prefs: {}, col: null, prefsDoc: null, db: null, base: "" };
+  let A = null; // the paper open for answering
   const LS_ATT = "orchard-vault-attempts", LS_PREFS = "orchard-vault-prefs";
   const readLS = (k, d) => { try { return JSON.parse(localStorage.getItem(k) || "null") || d; } catch (e) { return d; } };
   const writeLS = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} };
@@ -107,23 +108,45 @@
       const db = await window.claude.use("db"), user = db ? await window.claude.use("user") : null;
       const uid = user ? await user.id() : null;
       if (!db || !uid) throw new Error("no store");
-      S.col = db.collection(`data/users/${uid}/vault/attempts`);
-      S.prefsDoc = db.doc(`data/users/${uid}/vault/prefs`);
+      S.db = db; S.base = `data/users/${uid}/vault`;
+      S.col = db.collection(`${S.base}/attempts`);
+      S.prefsDoc = db.doc(`${S.base}/prefs`);
       S.prefsDoc.onSnapshot(snap => { S.prefs = (snap.exists && snap.data()) || {}; }, () => {});
       S.col.onSnapshot(snap => {
         clearTimeout(fallback);
+        const first = S.mode !== "db";
         S.mode = "db";
         S.attempts = Object.fromEntries(snap.docs.map(d => [d.id, d.data()]));
+        /* While a paper is open for answering, its working copy wins and the page isn't redrawn */
+        if (A) S.attempts[A.id] = A.att;
+        if (A && !first) return;
         render();
       }, () => { clearTimeout(fallback); S.col = null; useLocal(); });
     } catch (e) { clearTimeout(fallback); useLocal(); }
   }
+  /* Saves throw on failure, so callers can retry */
   async function saveAttempt(id, data) {
     data.updatedAt = Date.now();
     S.attempts[id] = data;
-    if (S.mode === "db" && S.col) { try { await S.col.doc(id).set(data); } catch (e) { say("Couldn’t save your progress. Check your connection."); } }
+    if (S.mode === "db" && S.col) await S.col.doc(id).set(data);
     else writeLS(LS_ATT, S.attempts);
   }
+  function savePrefs(patch) {
+    Object.assign(S.prefs, patch);
+    if (S.mode === "db" && S.prefsDoc) S.prefsDoc.set({ ...S.prefs }).catch(() => {});
+    else writeLS(LS_PREFS, S.prefs);
+  }
+  /* Handwriting: one doc per answer, so typing doesn't re-upload drawings */
+  const inkPath = (id, part) => `${id}--${part}`;
+  async function loadInk(id, part) {
+    if (S.mode === "db" && S.db) { const snap = await S.db.doc(`${S.base}/ink/${inkPath(id, part)}`).get(); return snap.exists ? snap.data() : null; }
+    return readLS("orchard-vault-ink:" + inkPath(id, part), null);
+  }
+  async function saveInk(id, part, data) {
+    if (S.mode === "db" && S.db) await S.db.doc(`${S.base}/ink/${inkPath(id, part)}`).set(data);
+    else { try { localStorage.setItem("orchard-vault-ink:" + inkPath(id, part), JSON.stringify(data)); } catch (e) { throw new Error("This device is out of space for drawings."); } }
+  }
+  const isAnswered = x => !!(x && (String(x.text || "").trim() || String(x.final || "").trim() || (x.choice && x.choice.length) || x.ink > 0));
 
   /* Status of a paper for this person */
   function statusOf(m) {
@@ -133,7 +156,7 @@
       const score = a.score ?? 0, total = a.total ?? m.totalMarks;
       return { key: "done", label: `${score}/${total}`, pct: total ? Math.round(score / total * 100) : 0, score, total };
     }
-    const answered = Object.values(a.answers || {}).filter(x => x && (x.text || (x.choice && x.choice.length) || x.ink)).length;
+    const answered = Object.values(a.answers || {}).filter(isAnswered).length;
     return { key: "going", label: `${answered}/${m.parts.length} answered`, pct: Math.round(answered / m.parts.length * 100) };
   }
   const statusPill = st => `<span class="vt-status" data-s="${st.key}"><i aria-hidden="true"></i>${st.key === "done" ? `Completed · <b>${H(st.label)}</b>` : H(st.key === "going" ? `In progress · ${st.label}` : st.label)}</span>`;
@@ -147,7 +170,7 @@
   function parse() {
     const parts = (location.hash || "").slice(1).split("/");
     if (parts[0] !== "vault") return null;
-    if (parts[1] === "paper" && parts[2]) return { page: "paper", id: decodeURIComponent(parts[2]) };
+    if (parts[1] === "paper" && parts[2]) return { page: parts[3] === "answer" ? "answer" : "paper", id: decodeURIComponent(parts[2]), part: parts[4] ? decodeURIComponent(parts[4]) : null };
     if (parts[1] === "check") return { page: "check" };
     return { page: "home" };
   }
@@ -168,6 +191,8 @@
     lastRoute = key;
     if (!V.index && !V.indexErr) { view.innerHTML = skeleton(); loadIndex().then(render); return; }
     if (V.indexErr) { view.innerHTML = head() + `<p class="empty">${H(V.indexErr)} <button type="button" class="chip sm" data-vt="retry">Try again</button></p>`; crumbs(r); return; }
+    if (r.page === "answer") return renderAnswer(r);
+    if (A) closeAnswer();
     if (r.page === "paper") return renderPaper(r, fresh);
     if (r.page === "check") return renderCheck(r);
     renderHome(r, fresh);
@@ -280,7 +305,7 @@
     const facts = [mins(m.minutes), `${m.totalMarks} marks`, m.calculator === false ? "No calculator" : m.calculator ? "Calculator" : ""].filter(Boolean);
     const hits = f.hits.slice(0, 3).map(p => {
       const t = T.get(p.topics[0]);
-      return `<a class="vt-hit" href="#vault/paper/${encodeURIComponent(m.id)}" data-part="${H(p.id)}"><b>${H(p.label)}</b><span>${H(p.text)}</span>${t ? `<em>${H(t.name)}</em>` : ""}</a>`;
+      return `<a class="vt-hit" href="#vault/paper/${encodeURIComponent(m.id)}/answer/${encodeURIComponent(p.id)}"><b>${H(p.label)}</b><span>${H(p.text)}</span>${t ? `<em>${H(t.name)}</em>` : ""}</a>`;
     }).join("");
     return `<div class="vt-paper-wrap">
       <a class="vt-paper glass" href="#vault/paper/${encodeURIComponent(m.id)}" data-s="${st.key}">
@@ -307,34 +332,51 @@
     if (!t) return `<span class="vt-tag unknown" title="This topic tag isn’t on the site: ${H(key)}">Unknown topic</span>`;
     return `<span class="vt-tag" title="${H(`${t.subject} › ${t.topic} › ${t.group}`)}"><span class="vt-tag-t">${H(t.topic)}</span>${H(t.name)}</span>`;
   }
-  function partHTML(p) {
-    const opts = p.type === "mcq" ? `<ul class="vt-opts" aria-label="Options">${p.options.map(o => `<li><span class="vt-opt-k">${H(o.key)}</span>${inline(o.text)}</li>`).join("")}</ul>${p.pick > 1 ? `<p class="vt-pick">Tick ${p.pick} boxes.</p>` : ""}` : "";
+  /* ---------- questions ---------- */
+  const words = s => (String(s || "").match(/\S+/g) || []).length;
+  const defaultMode = p => p.type === "diagram" ? "ink" : (S.prefs.inputMode === "ink" ? "ink" : "type");
+  const sourceHTML = x => `<aside class="vt-source glass" id="vt-src-${H(x.id)}" aria-label="${H(x.title)}"><p class="vt-k">${H(x.title)}</p>${fmt(x.body)}${figuresHTML(x.figures)}</aside>`;
+
+  function answerHTML(p, a) {
+    if (p.type === "mcq") {
+      const ch = a.choice || [];
+      return `<div class="vt-opts vt-opts-ans" role="group" aria-label="Options${p.pick > 1 ? `, choose ${p.pick}` : ""}">${p.options.map(o => `<button type="button" class="vt-opt" data-opt="${H(o.key)}" aria-pressed="${ch.includes(o.key)}"><span class="vt-opt-k">${H(o.key)}</span><span class="vt-opt-t">${inline(o.text)}</span></button>`).join("")}</div>${p.pick > 1 ? `<p class="vt-pick">Choose ${p.pick}.</p>` : ""}`;
+    }
+    const mode = a.mode || defaultMode(p), calc = p.type === "calc";
+    const long = p.type === "extended" || (p.lines || 0) >= 6 || p.marks >= 4;
+    const rows = Math.max(2, Math.min(16, p.lines || (calc ? 3 : p.marks * 2)));
+    return `<div class="vt-ans" data-mode="${mode}">
+      <div class="vt-ans-top">
+        <div class="vt-mode" role="group" aria-label="Answer by"><button type="button" data-mode="type" aria-pressed="${mode === "type"}">Type</button><button type="button" data-mode="ink" aria-pressed="${mode === "ink"}">Write</button></div>
+        ${calc ? `<span class="vt-ans-k">Working</span>` : ""}
+      </div>
+      <div class="vt-pane-type"><textarea class="vt-ta" rows="${rows}" placeholder="${calc ? "Show your working" : "Type your answer"}" aria-label="${calc ? "Working" : "Answer"} for ${H(p.label)}"${calc ? ' spellcheck="false" autocapitalize="off" autocorrect="off"' : ""}>${H(a.text || "")}</textarea>${long ? `<p class="vt-wc" aria-live="polite">${words(a.text)} words</p>` : ""}</div>
+      <div class="vt-pane-ink"></div>
+      ${calc ? `<label class="vt-final"><span>Answer</span>${p.prefix ? `<i>${H(p.prefix)}</i>` : ""}<input class="input" data-final autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="done" value="${H(a.final || "")}" aria-label="Final answer for ${H(p.label)}">${p.units ? `<i>${H(p.units)}</i>` : ""}</label>` : ""}
+    </div>`;
+  }
+  function partHTML(p, a) {
     return `<div class="vt-part" id="vt-p-${H(p.id)}" data-part="${H(p.id)}">
       <div class="vt-part-top"><span class="vt-label">${H(p.label)}</span><div class="vt-text">${fmt(p.text)}</div><span class="vt-marks">${p.marks} ${p.marks === 1 ? "mark" : "marks"}</span></div>
-      ${figuresHTML(p.figures)}${opts}
+      ${figuresHTML(p.figures)}
       <div class="vt-part-foot">${p.topics.map(tagHTML).join("")}<span class="vt-type">${TYPE_LABEL[p.type] || ""}</span></div>
+      ${answerHTML(p, a || {})}
     </div>`;
   }
 
-  function renderPaper(r, fresh) {
+  /* ---------- a paper's cover ---------- */
+  function renderPaper(r) {
     const m = meta(r.id);
     if (!m) { view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a><p class="empty">That paper isn’t in the Vault.</p>`; crumbs(r, "Not found"); return; }
     const d = V.papers.get(r.id);
     crumbs(r, `${m.subject} ${m.paper}`);
-    if (!d) {
-      view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a><div class="vt-skel" aria-hidden="true"><i></i><i></i></div>`;
-      loadPaper(r.id).then(() => { if (parse()?.id === r.id) renderPaper(r, true); })
-        .catch(() => { if (parse()?.id === r.id) view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a><p class="empty">Couldn’t load this paper. Check your connection and try again.</p>`; });
-      return;
-    }
-    const st = statusOf(m), T = topics();
+    if (!d) return waitForPaper(r, renderPaper);
+    const st = statusOf(m), T = topics(), ans = (S.attempts[m.id] || {}).answers || {};
     const facts = [mins(d.minutes), `${d.totalMarks} marks`, d.calculator === false ? "No calculator" : d.calculator ? "Calculator allowed" : "", `${d.parts.length} questions`].filter(Boolean);
-    /* Marks per topic, to show what the paper covers */
     const byTopic = new Map();
     d.parts.forEach(p => { const t = T.get(p.topics[0]); const k = t ? t.topic : "Other"; byTopic.set(k, (byTopic.get(k) || 0) + p.marks); });
-    const src = new Map((d.sources || []).map(s => [s.id, s]));
-    const shownSrc = new Set();
     const action = st.key === "done" ? "Review paper" : st.key === "going" ? "Continue paper" : "Start paper";
+    const go = p => `#vault/paper/${encodeURIComponent(d.id)}/answer/${encodeURIComponent(p.id)}`;
 
     view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a>
       <header class="vt-cover paper-head glass" style="--c:${subjectColour(d.subject)}">
@@ -356,22 +398,153 @@
         </div>
       </div>
       <p class="block-label vt-qhead">Questions</p>
+      <ol class="vt-qlist glass">${d.parts.map(p => {
+        const t = T.get(p.topics[0]), done = isAnswered(ans[p.id]);
+        return `<li><a href="${go(p)}"><span class="vt-label">${H(p.label)}</span><span class="vt-ql-t"><span>${H(plain((p.first && p.q.stem && !/^(This question|Read )/.test(p.q.stem) ? p.q.stem + " " : "") + p.text))}</span>${t ? `<small>${H(t.name)}</small>` : ""}</span><span class="vt-ql-m">${p.marks}</span><i class="vt-ql-dot" data-on="${done}" aria-label="${done ? "Answered" : "Not answered"}"></i></a></li>`;
+      }).join("")}</ol>`;
+  }
+  function waitForPaper(r, then) {
+    view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a><div class="vt-skel" aria-hidden="true"><i></i><i></i></div>`;
+    loadPaper(r.id).then(() => { if (parse()?.id === r.id) render(); })
+      .catch(() => { if (parse()?.id === r.id) view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a><p class="empty">Couldn’t load this paper. Check your connection and try again.</p>`; });
+  }
+
+  /* ---------- answering ----------
+     A = the paper open for answering: { id, d, att, inks: Map(partId → canvas) }.
+     Typed answers save to the attempt doc; each drawing saves to its own doc. */
+  const SAVE = { attempt: 0, ink: new Map(), failed: false };
+  function setSaveState() {
+    const el = document.getElementById("vt-save");
+    if (!el) return;
+    const pending = SAVE.attempt || SAVE.ink.size;
+    const s = SAVE.failed ? "error" : pending ? "saving" : "saved";
+    el.dataset.s = s;
+    el.textContent = s === "error" ? "Not saved yet, retrying" : s === "saving" ? "Saving…" : S.mode === "db" ? "Saved" : "Saved on this device";
+  }
+  function answerOf(pid) { const a = A.att.answers; return a[pid] || (a[pid] = {}); }
+  function touched(pid) {
+    answerOf(pid).at = Date.now();
+    clearTimeout(SAVE.attempt);
+    SAVE.attempt = setTimeout(flushAttempt, 700);
+    setSaveState(); updateProgress();
+  }
+  async function flushAttempt() {
+    clearTimeout(SAVE.attempt); SAVE.attempt = 0;
+    if (!A) return;
+    try { await saveAttempt(A.id, A.att); SAVE.failed = false; }
+    catch (e) { SAVE.failed = true; SAVE.attempt = setTimeout(flushAttempt, 5000); }
+    setSaveState();
+  }
+  function inkChanged(pid, api) {
+    const a = answerOf(pid);
+    a.ink = api.count();
+    touched(pid);
+    clearTimeout(SAVE.ink.get(pid));
+    SAVE.ink.set(pid, setTimeout(() => flushInk(pid), 1200));
+    setSaveState();
+  }
+  async function flushInk(pid) {
+    clearTimeout(SAVE.ink.get(pid)); SAVE.ink.delete(pid);
+    if (!A || !A.inks.get(pid)) return;
+    try { await saveInk(A.id, pid, A.inks.get(pid).data()); SAVE.failed = false; }
+    catch (e) { SAVE.failed = true; SAVE.ink.set(pid, setTimeout(() => flushInk(pid), 5000)); if (/space/.test(e.message)) say(e.message); }
+    setSaveState();
+  }
+  function flushAll() {
+    if (!A) return Promise.resolve();
+    const jobs = [...SAVE.ink.keys()].map(flushInk);
+    if (SAVE.attempt) jobs.push(flushAttempt());
+    return Promise.all(jobs);
+  }
+  function closeAnswer() {
+    flushAll();
+    A.inks.forEach(x => x.destroy());
+    A = null;
+  }
+  async function mountInk(pid) {
+    if (!A || A.inks.has(pid)) return;
+    const host = view.querySelector(`#vt-p-${CSS.escape(pid)} .vt-pane-ink`);
+    if (!host) return;
+    const p = A.d.parts.find(x => x.id === pid), id = A.id;
+    A.inks.set(pid, null);
+    host.innerHTML = `<div class="vt-skel" aria-hidden="true"><i></i></div>`;
+    let data = null;
+    if (answerOf(pid).ink > 0) { try { data = await loadInk(id, pid); } catch (e) { say("Couldn’t load your drawing. Check your connection."); } }
+    if (!A || A.id !== id || !host.isConnected) return;
+    host.innerHTML = "";
+    const lines = p.lines || (p.type === "diagram" ? 12 : p.marks * 2 + 2);
+    const api = VaultInk.mount(host, { data, background: p.background || (p.type === "diagram" ? "grid" : "lined"), height: Math.max(260, Math.min(1400, lines * 44 + 40)), label: `Handwritten answer for ${p.label}`, onChange: x => inkChanged(pid, x) });
+    A.inks.set(pid, api);
+  }
+  function updateProgress() {
+    if (!A) return;
+    const n = A.d.parts.filter(p => isAnswered(A.att.answers[p.id])).length;
+    const el = document.getElementById("vt-progress");
+    if (el) el.textContent = `${n} of ${A.d.parts.length} answered`;
+    const bar = document.getElementById("vt-progress-bar");
+    if (bar) bar.style.width = Math.round(n / A.d.parts.length * 100) + "%";
+    view.querySelectorAll(".vt-jump [data-jump]").forEach(b => b.dataset.on = String(isAnswered(A.att.answers[b.dataset.jump])));
+  }
+  /* Late layout (fonts, figures, canvases) can move the question after the jump,
+     so keep it in place for a moment, unless the student scrolls first. */
+  let settle = 0;
+  function scrollToPart(pid, smooth) {
+    const el = document.getElementById("vt-p-" + pid);
+    if (!el) return;
+    el.scrollIntoView({ block: "start", behavior: smooth ? "smooth" : "auto" });
+    if (smooth) return;
+    const run = ++settle, until = performance.now() + 1500, margin = parseFloat(getComputedStyle(el).scrollMarginTop) || 0;
+    const stop = () => { settle++; ["wheel", "touchstart", "keydown", "pointerdown"].forEach(t => removeEventListener(t, stop, true)); };
+    ["wheel", "touchstart", "keydown", "pointerdown"].forEach(t => addEventListener(t, stop, { capture: true, passive: true }));
+    (function check() {
+      if (run !== settle || !el.isConnected) return;
+      if (performance.now() > until) return stop();
+      const top = el.getBoundingClientRect().top;
+      if (Math.abs(top - margin) > 4 && scrollY + innerHeight < document.documentElement.scrollHeight - 2 || top - margin < -4) scrollTo(0, scrollY + top - margin);
+      requestAnimationFrame(check);
+    })();
+  }
+
+  function renderAnswer(r) {
+    const m = meta(r.id);
+    if (!m) return renderPaper(r);
+    crumbs(r, `${m.subject} ${m.paper}`);
+    if (!V.papers.get(r.id)) return waitForPaper(r);
+    if (S.mode === "loading") { view.innerHTML = `<div class="vt-skel" aria-hidden="true"><i></i><i></i><i></i></div>`; return; }
+    /* Same paper already open: just move to the question */
+    if (A && A.id === r.id && view.querySelector(".vt-sit")) { if (r.part) requestAnimationFrame(() => scrollToPart(r.part)); return; }
+    if (A) closeAnswer();
+    const d = V.papers.get(r.id);
+    const saved = S.attempts[r.id];
+    A = { id: r.id, d, inks: new Map(), att: saved ? JSON.parse(JSON.stringify(saved)) : { paperId: r.id, status: "in-progress", startedAt: Date.now(), answers: {}, total: d.totalMarks } };
+    A.att.answers = A.att.answers || {};
+    const src = new Map((d.sources || []).map(s => [s.id, s])), shown = new Set();
+    view.innerHTML = `<div class="vt-sit">
+      <div class="vt-tbar glass" role="toolbar" aria-label="Paper tools">
+        <a class="icon-btn vt-tbar-back" href="#vault/paper/${encodeURIComponent(d.id)}" aria-label="Back to the paper’s cover">${ICON.back}</a>
+        <div class="vt-tbar-t"><b>${H(d.subject)} ${H(d.paper)}</b><small><span id="vt-progress"></span> · <span id="vt-save" class="vt-save" data-s="saved"></span></small></div>
+        ${(d.sources || []).map(s => `<button type="button" class="chip sm" data-vt="source" data-src="${H(s.id)}" aria-expanded="false">${H(s.title)}</button>`).join("")}
+        <button type="button" class="chip sm" data-vt="jump" aria-expanded="false" aria-controls="vt-jump">Questions</button>
+        <span class="vt-tbar-prog" aria-hidden="true"><i id="vt-progress-bar"></i></span>
+      </div>
+      <nav class="vt-jump glass" id="vt-jump" aria-label="Go to a question" hidden>${d.parts.map(p => `<button type="button" data-jump="${H(p.id)}">${H(p.label)}</button>`).join("")}</nav>
       <div class="vt-questions">${d.questions.map(q => {
         let s = "";
-        if (q.source && src.has(q.source) && !shownSrc.has(q.source)) {
-          const x = src.get(q.source); shownSrc.add(q.source);
-          s = `<aside class="vt-source glass" aria-label="${H(x.title)}"><p class="vt-k">${H(x.title)}</p>${fmt(x.body)}${figuresHTML(x.figures)}</aside>`;
-        }
+        if (q.source && src.has(q.source) && !shown.has(q.source)) { shown.add(q.source); s = sourceHTML(src.get(q.source)); }
         return `${s}<section class="vt-q glass" aria-label="Question ${H(q.n)}">
           ${q.stem || (q.figures && q.figures.length) ? `<div class="vt-stem"><span class="vt-qn">${H(q.n)}</span><div>${fmt(q.stem)}${figuresHTML(q.figures)}</div></div>` : ""}
-          ${q.parts.map(partHTML).join("")}
+          ${q.parts.map(p => partHTML(p, A.att.answers[p.id])).join("")}
         </section>`;
-      }).join("")}</div>`;
-    if (fresh) {
-      const want = sessionStorage.getItem("vt-jump");
-      if (want) { sessionStorage.removeItem("vt-jump"); requestAnimationFrame(() => document.getElementById("vt-p-" + want)?.scrollIntoView({ block: "center" })); }
-    }
+      }).join("")}</div>
+      <div class="vt-end glass"><p><b>End of paper.</b> Your answers save as you go, so you can stop and come back on any device.</p><a class="chip" href="#vault/paper/${encodeURIComponent(d.id)}">Back to the cover</a></div>
+      <aside class="vt-srcpanel glass" id="vt-srcpanel" hidden aria-label="Source"><div class="vt-srcpanel-head"><b></b><button type="button" class="icon-btn" data-vt="source-close" aria-label="Close">${ICON.x}</button></div><div class="vt-srcpanel-body"></div></aside>
+    </div>`;
+    view.querySelectorAll(".vt-ta").forEach(grow);
+    d.parts.forEach(p => { if (p.type !== "mcq" && (A.att.answers[p.id]?.mode || defaultMode(p)) === "ink") mountInk(p.id); });
+    updateProgress(); setSaveState();
+    if (r.part) requestAnimationFrame(() => scrollToPart(r.part));
   }
+  function grow(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px"; }
 
   /* ---------- checking papers against the site's topics ---------- */
   function edits(a, b) {
@@ -420,11 +593,48 @@
   }
 
   /* ---------- events ---------- */
+  function openSource(id, btn) {
+    const panel = document.getElementById("vt-srcpanel"), x = (A.d.sources || []).find(s => s.id === id);
+    if (!panel || !x) return;
+    const open = panel.hidden || panel.dataset.src !== id;
+    view.querySelectorAll('[data-vt="source"]').forEach(b => b.setAttribute("aria-expanded", String(open && b === btn)));
+    panel.hidden = !open; panel.dataset.src = id;
+    if (open) { panel.querySelector(".vt-srcpanel-head b").textContent = x.title; panel.querySelector(".vt-srcpanel-body").innerHTML = fmt(x.body) + figuresHTML(x.figures); }
+    view.classList.toggle("vt-src-open", open);
+  }
+  function choose(btn) {
+    const partEl = btn.closest(".vt-part"), pid = partEl.dataset.part, p = A.d.parts.find(x => x.id === pid), a = answerOf(pid);
+    const ch = new Set(a.choice || []), k = btn.dataset.opt;
+    if (ch.has(k)) ch.delete(k);
+    else if (p.pick > 1 && ch.size >= p.pick) { say(`You can choose ${p.pick}. Untick one first.`); return; }
+    else { if (p.pick <= 1) ch.clear(); ch.add(k); }
+    a.choice = p.options.map(o => o.key).filter(x => ch.has(x));
+    partEl.querySelectorAll(".vt-opt").forEach(o => o.setAttribute("aria-pressed", String(ch.has(o.dataset.opt))));
+    touched(pid);
+  }
+  function setMode(btn) {
+    const partEl = btn.closest(".vt-part"), pid = partEl.dataset.part, p = A.d.parts.find(x => x.id === pid), mode = btn.dataset.mode;
+    const box = partEl.querySelector(".vt-ans");
+    if (box.dataset.mode === mode) return;
+    box.dataset.mode = mode;
+    box.querySelectorAll("[data-mode]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.mode === mode)));
+    answerOf(pid).mode = mode;
+    if (p.type !== "diagram" && S.prefs.inputMode !== mode) savePrefs({ inputMode: mode });
+    if (mode === "ink") mountInk(pid); else { const ta = box.querySelector(".vt-ta"); if (ta) { grow(ta); ta.focus({ preventScroll: true }); } }
+    touched(pid);
+  }
+
   view.addEventListener("click", e => {
     const f = e.target.closest("[data-f]");
     if (f && f.tagName === "BUTTON") {
       ui[f.dataset.f] = ui[f.dataset.f] === f.dataset.v && f.dataset.v !== "all" ? "all" : f.dataset.v;
       saveUI(); render(); return;
+    }
+    if (A) {
+      const opt = e.target.closest(".vt-opt"); if (opt) return choose(opt);
+      const md = e.target.closest(".vt-mode [data-mode]"); if (md) return setMode(md);
+      const j = e.target.closest("[data-jump]");
+      if (j) { document.getElementById("vt-jump").hidden = true; view.querySelector('[data-vt="jump"]').setAttribute("aria-expanded", "false"); scrollToPart(j.dataset.jump, true); return; }
     }
     const b = e.target.closest("[data-vt]");
     if (b) {
@@ -433,10 +643,10 @@
       if (act === "reset") { Object.assign(ui, { subject: "all", status: "all", year: "all", tier: "all", board: "all", q: "" }); saveUI(); render(); }
       if (act === "retry") { V.indexErr = null; render(); }
       if (act === "start") startPaper(parse().id);
-      return;
+      if (act === "jump") { const n = document.getElementById("vt-jump"); n.hidden = !n.hidden; b.setAttribute("aria-expanded", String(!n.hidden)); }
+      if (act === "source") openSource(b.dataset.src, b);
+      if (act === "source-close") openSource(document.getElementById("vt-srcpanel").dataset.src, null);
     }
-    const hit = e.target.closest(".vt-hit");
-    if (hit) { try { sessionStorage.setItem("vt-jump", hit.dataset.part); } catch (x) {} }
   });
   view.addEventListener("change", e => {
     const s = e.target.closest("select[data-f]");
@@ -444,8 +654,18 @@
   });
   let qTimer;
   view.addEventListener("input", e => {
-    if (e.target.id !== "vt-q") return;
-    ui.q = e.target.value;
+    const t = e.target;
+    if (A && t.closest(".vt-part")) {
+      const partEl = t.closest(".vt-part"), pid = partEl.dataset.part;
+      if (t.classList.contains("vt-ta")) {
+        answerOf(pid).text = t.value; grow(t);
+        const wc = partEl.querySelector(".vt-wc"); if (wc) { const n = words(t.value); wc.textContent = `${n} ${n === 1 ? "word" : "words"}`; }
+        touched(pid);
+      } else if (t.matches("[data-final]")) { answerOf(pid).final = t.value; touched(pid); }
+      return;
+    }
+    if (t.id !== "vt-q") return;
+    ui.q = t.value;
     clearTimeout(qTimer);
     qTimer = setTimeout(() => {
       const box = document.getElementById("vt-list");
@@ -455,21 +675,28 @@
       view.querySelector(".vt-q-clear").hidden = !ui.q;
     }, 120);
   });
+  view.addEventListener("keydown", e => {
+    if (e.key === "Enter" && e.target.matches && e.target.matches("[data-final]")) e.target.blur();
+    if (e.key === "Escape" && A) { const n = document.getElementById("vt-jump"); if (n && !n.hidden) { n.hidden = true; view.querySelector('[data-vt="jump"]').setAttribute("aria-expanded", "false"); } }
+  });
+  /* Save straight away when the page is hidden: switching apps, locking the iPad or closing the tab */
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushAll(); });
+  addEventListener("pagehide", () => flushAll());
+  /* Re-fit answer boxes when the iPad rotates */
+  addEventListener("resize", () => { if (A) view.querySelectorAll(".vt-ta").forEach(grow); });
 
-  /* Starting a paper records it as in progress. Answering arrives in stage 2. */
   async function startPaper(id) {
     const m = meta(id);
     if (!m) return;
-    if (!S.attempts[id]) await saveAttempt(id, { paperId: id, status: "in-progress", startedAt: Date.now(), answers: {}, total: m.totalMarks });
-    render();
-    say("Answering on the site is coming in the next stage.");
+    if (!S.attempts[id]) { try { await saveAttempt(id, { paperId: id, status: "in-progress", startedAt: Date.now(), answers: {}, total: m.totalMarks }); } catch (e) { say("Couldn’t save to your account. Your answers will save once you’re back online."); } }
+    location.hash = `#vault/paper/${encodeURIComponent(id)}/answer`;
   }
 
-  addEventListener("hashchange", () => { if (parse()) render(); });
+  addEventListener("hashchange", () => { if (parse()) render(); else if (A) closeAnswer(); });
   if (parse()) render();
   loadIndex().then(() => { if (parse()) render(); });
   initStore();
 
   /* For later stages and for testing */
-  window.orchardVault = { loadIndex, loadPaper, statusOf: id => meta(id) && statusOf(meta(id)), attempts: () => S.attempts, topics };
+  window.orchardVault = { loadIndex, loadPaper, statusOf: id => meta(id) && statusOf(meta(id)), attempts: () => S.attempts, topics, flush: flushAll, open: () => A, mode: () => S.mode };
 })();

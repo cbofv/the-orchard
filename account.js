@@ -166,7 +166,7 @@
 
   /* ---------- account panel ---------- */
   const DATA_KEYS = ["orchard-sessions", "orchard-events", "orchard-grades", "orchard-papers", "orchard-ratings", "orchard-syl-extra", "orchard-goal", "orchard-targets", "orchard-timer", "orchard-last", "orchard-vault-attempts", "orchard-vault-prefs"];
-  const clearLocal = () => { try { DATA_KEYS.forEach(k => localStorage.removeItem(k)); } catch (e) {} };
+  const clearLocal = () => { try { DATA_KEYS.forEach(k => localStorage.removeItem(k)); Object.keys(localStorage).filter(k => k.startsWith("orchard-vault-ink:")).forEach(k => localStorage.removeItem(k)); } catch (e) {} };
   const escH = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const say = msg => (typeof window.toast === "function" ? window.toast(msg) : alert(msg));
 
