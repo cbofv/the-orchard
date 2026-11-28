@@ -6,7 +6,7 @@
    Requests to other sites (Supabase, fonts) are never cached here.
    The list below is written by tools/stamp.py. */
 /* stamp:start */
-const CACHE = "orchard-548ddaff";
+const CACHE = "orchard-876bea69";
 const SHELL = [
   "./",
   "index.html",
@@ -33,11 +33,11 @@ const SHELL = [
   "social.css?v=f9a02ffeac",
   "social.js?v=2749f797a7",
   "supabase.js?v=59d39487c3",
-  "ui.css?v=55c3ce1b15",
-  "ui.js?v=a81b3447b1",
-  "vault-ink.js?v=e1e5607983",
-  "vault.css?v=3845e68b35",
-  "vault.js?v=d9b6ddf0a5"
+  "ui.css?v=acc7d3f801",
+  "ui.js?v=e66f6d2192",
+  "vault-ink.js?v=f08718b298",
+  "vault.css?v=737905b20d",
+  "vault.js?v=cdabda27ce"
 ];
 /* stamp:end */
 

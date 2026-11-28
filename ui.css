@@ -630,3 +630,24 @@
 #o .o-now-mode button { height: 30px; padding: 0 14px; border: 0; border-radius: var(--o-r-sm); background: none; color: var(--ink-soft); font: 500 .86rem var(--body); cursor: pointer; }
 #o .o-now-mode button[aria-selected="true"] { background: var(--o-raised); color: var(--ink); box-shadow: var(--o-shadow-sm), 0 0 0 1px var(--o-border); }
 #o .o-day-late { margin: 0 0 14px; padding: 10px 12px; border-radius: 10px; font-size: .84rem; color: var(--ink-soft); background: color-mix(in srgb, #e9a23b 10%, transparent); border: 1px solid rgb(233 162 59 / .35); }
+
+/* ==========================================================================
+   Sidebar hide / show (wide screens only; narrow screens use the menu)
+   ========================================================================== */
+#o .o-side-hide, #o .o-side-show { display: none; }
+@media (min-width: 1024px) {
+  #o .o-side-hide { display: grid; place-items: center; width: 30px; height: 30px; margin-left: auto; border-radius: 8px; color: var(--ink-faint); background: none; border: 0; }
+  #o .o-side-hide:hover, #o .o-side-show:hover { color: var(--ink); background: var(--o-hover); }
+  #o .o-side-hide svg, #o .o-side-show svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  #o .o-side-show .o-st-arrow { transform: scaleX(-1); transform-origin: 14.5px 12px; }
+  .side-hidden #o .o-side-show { display: grid; place-items: center; width: 34px; height: 34px; margin-right: 4px; border-radius: 8px; color: var(--ink-soft); background: none; border: 0; pointer-events: auto; flex: none; }
+  .side-hidden #o .drawer { transform: translateX(-100%); visibility: hidden; }
+  .side-hidden #o .topbar { left: 0; }
+  .side-hidden #o main { margin-left: 0; }
+  .side-hidden #o .toast { left: 50%; }
+  .side-hidden #o main > .view { margin-left: auto; }
+  .side-anim #o .drawer { transition: transform .3s cubic-bezier(.2,.8,.2,1), visibility .3s; }
+  .side-anim #o .topbar { transition: left .3s cubic-bezier(.2,.8,.2,1); }
+  .side-anim #o main { transition: margin-left .3s cubic-bezier(.2,.8,.2,1); }
+  .reduce-motion.side-anim #o :is(.drawer, .topbar, main) { transition: none; }
+}

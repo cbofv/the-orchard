@@ -361,6 +361,7 @@
       ${figuresHTML(p.figures)}
       <div class="vt-part-foot">${p.topics.map(tagHTML).join("")}<span class="vt-type">${TYPE_LABEL[p.type] || ""}</span></div>
       ${answerHTML(p, a || {})}
+      ${A ? `<div class="vt-result" aria-live="polite">${resultHTML(p, A.att.answers[p.id] || {})}</div>` : ""}
     </div>`;
   }
 
@@ -423,7 +424,13 @@
   }
   function answerOf(pid) { const a = A.att.answers; return a[pid] || (a[pid] = {}); }
   function touched(pid) {
-    answerOf(pid).at = Date.now();
+    const a = answerOf(pid);
+    a.at = Date.now();
+    if (!marking.has(pid)) {
+      const host = view.querySelector(`#vt-p-${CSS.escape(pid)} .vt-result`);
+      // Redraw when a mark goes out of date, or the Mark button should appear or go
+      if (a.mark || a.markError || (host && !!host.querySelector(".vt-markbar") !== isAnswered(a))) renderResult(pid);
+    }
     clearTimeout(SAVE.attempt);
     SAVE.attempt = setTimeout(flushAttempt, 700);
     setSaveState(); updateProgress();
@@ -437,7 +444,7 @@
   }
   function inkChanged(pid, api) {
     const a = answerOf(pid);
-    a.ink = api.count();
+    a.ink = api.count(); a.inkRev = (a.inkRev || 0) + 1;
     touched(pid);
     clearTimeout(SAVE.ink.get(pid));
     SAVE.ink.set(pid, setTimeout(() => flushInk(pid), 1200));
@@ -505,21 +512,22 @@
     })();
   }
 
-  function renderAnswer(r) {
+  function renderAnswer(r, force) {
     const m = meta(r.id);
     if (!m) return renderPaper(r);
     crumbs(r, `${m.subject} ${m.paper}`);
     if (!V.papers.get(r.id)) return waitForPaper(r);
     if (S.mode === "loading") { view.innerHTML = `<div class="vt-skel" aria-hidden="true"><i></i><i></i><i></i></div>`; return; }
     /* Same paper already open: just move to the question */
-    if (A && A.id === r.id && view.querySelector(".vt-sit")) { if (r.part) requestAnimationFrame(() => scrollToPart(r.part)); return; }
+    if (!force && A && A.id === r.id && view.querySelector(".vt-sit")) { if (r.part) requestAnimationFrame(() => scrollToPart(r.part)); return; }
     if (A) closeAnswer();
     const d = V.papers.get(r.id);
     const saved = S.attempts[r.id];
     A = { id: r.id, d, inks: new Map(), att: saved ? JSON.parse(JSON.stringify(saved)) : { paperId: r.id, status: "in-progress", startedAt: Date.now(), answers: {}, total: d.totalMarks } };
     A.att.answers = A.att.answers || {};
     const src = new Map((d.sources || []).map(s => [s.id, s])), shown = new Set();
-    view.innerHTML = `<div class="vt-sit">
+    const locked = A.att.status === "completed";
+    view.innerHTML = `<div class="vt-sit${locked ? " vt-locked" : ""}">
       <div class="vt-tbar glass" role="toolbar" aria-label="Paper tools">
         <a class="icon-btn vt-tbar-back" href="#vault/paper/${encodeURIComponent(d.id)}" aria-label="Back to the paper’s cover">${ICON.back}</a>
         <div class="vt-tbar-t"><b>${H(d.subject)} ${H(d.paper)}</b><small><span id="vt-progress"></span> · <span id="vt-save" class="vt-save" data-s="saved"></span></small></div>
@@ -527,6 +535,7 @@
         <button type="button" class="chip sm" data-vt="jump" aria-expanded="false" aria-controls="vt-jump">Questions</button>
         <span class="vt-tbar-prog" aria-hidden="true"><i id="vt-progress-bar"></i></span>
       </div>
+      ${summaryHTML()}
       <nav class="vt-jump glass" id="vt-jump" aria-label="Go to a question" hidden>${d.parts.map(p => `<button type="button" data-jump="${H(p.id)}">${H(p.label)}</button>`).join("")}</nav>
       <div class="vt-questions">${d.questions.map(q => {
         let s = "";
@@ -536,9 +545,10 @@
           ${q.parts.map(p => partHTML(p, A.att.answers[p.id])).join("")}
         </section>`;
       }).join("")}</div>
-      <div class="vt-end glass"><p><b>End of paper.</b> Your answers save as you go, so you can stop and come back on any device.</p><a class="chip" href="#vault/paper/${encodeURIComponent(d.id)}">Back to the cover</a></div>
+      <div class="vt-end glass">${locked ? `<p><b>Handed in.</b> Your marks are above each answer. Scroll to the top for your score.</p><a class="chip" href="#vault/paper/${encodeURIComponent(d.id)}">Back to the cover</a>` : `<p><b>End of paper.</b> Your answers save as you go. Hand in when you’re ready and every question gets marked.</p><button type="button" class="primary" data-act="handin">Hand in and mark</button>`}</div>
       <aside class="vt-srcpanel glass" id="vt-srcpanel" hidden aria-label="Source"><div class="vt-srcpanel-head"><b></b><button type="button" class="icon-btn" data-vt="source-close" aria-label="Close">${ICON.x}</button></div><div class="vt-srcpanel-body"></div></aside>
     </div>`;
+    if (locked) view.querySelectorAll(".vt-ans .vt-ta, .vt-ans [data-final]").forEach(x => { x.readOnly = true; });
     view.querySelectorAll(".vt-ta").forEach(grow);
     d.parts.forEach(p => { if (p.type !== "mcq" && (A.att.answers[p.id]?.mode || defaultMode(p)) === "ink") mountInk(p.id); });
     updateProgress(); setSaveState();
@@ -592,6 +602,209 @@
     });
   }
 
+  /* ---------- marking ----------
+     Multiple choice, final numbers and exact forms are marked here, instantly.
+     Everything else goes to the vault-mark function, which asks Claude to mark it
+     against the scheme. If that isn't available, students mark it themselves. */
+  const hashStr = s => { let h = 5381; for (let i = 0; i < s.length; i++) h = (h * 33 ^ s.charCodeAt(i)) >>> 0; return h.toString(36); };
+  const sigOf = a => hashStr(JSON.stringify([a.mode || "", a.text || "", a.final || "", a.choice || [], a.inkRev || 0]));
+  const fresh = a => !!(a && a.mark && a.mark.sig === sigOf(a));
+
+  /* "1 5/6", "11/6", "-2.5", "3.2 × 10^-3", "£36", "x = 6", "12 µm" → a number */
+  function toNumber(raw, p) {
+    let s = String(raw || "").trim().toLowerCase().replace(/[−–]/g, "-").replace(/,(?=\d{3}\b)/g, "").replace(/\s+/g, " ");
+    if (p.prefix) s = s.replace(new RegExp("^" + p.prefix.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s*"), "");
+    s = s.replace(/^[a-z]\s*=\s*/, "").replace(/^£/, "");
+    if (p.units) s = s.replace(new RegExp("\\s*" + p.units.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "$"), "");
+    s = s.replace(/\s*(%|cm|mm|m|kg|g|µm|um|s)$/, "").trim();
+    s = s.replace(/[¼½¾⅓⅔⅕⅙⅚⅛]/g, c => " " + ({ "¼": "1/4", "½": "1/2", "¾": "3/4", "⅓": "1/3", "⅔": "2/3", "⅕": "1/5", "⅙": "1/6", "⅚": "5/6", "⅛": "1/8" })[c]).trim();
+    let m;
+    if ((m = /^(-?\d+)\s+(\d+)\s*\/\s*(\d+)$/.exec(s))) { const w = +m[1]; return { v: w + Math.sign(w || 1) * (+m[2] / +m[3]), form: "mixed", simplest: gcd(+m[2], +m[3]) === 1 && +m[2] < +m[3] }; }
+    if ((m = /^(-?\d+)\s*\/\s*(\d+)$/.exec(s))) return { v: +m[1] / +m[2], form: "fraction", simplest: gcd(Math.abs(+m[1]), +m[2]) === 1 };
+    if ((m = /^(-?\d*\.?\d+)\s*(?:x|×|\*)\s*10\s*\^?\s*\(?(-?\d+)\)?$/.exec(s))) return { v: +m[1] * Math.pow(10, +m[2]), form: "standard" };
+    if (/^-?\d*\.?\d+$/.test(s)) return { v: +s, form: "decimal" };
+    return null;
+  }
+  function gcd(a, b) { return b ? gcd(b, a % b) : a; }
+  const targetOf = v => { const s = String(v); if (s.includes("/")) { const [a, b] = s.split("/").map(Number); return a / b; } return Number(s); };
+  const normExact = s => String(s || "").toLowerCase().replace(/[−–]/g, "-").replace(/²/g, "^2").replace(/³/g, "^3").replace(/×/g, "*").replace(/\s+/g, "").replace(/^[a-z]\(?x\)?=/, "");
+  const hasWorking = a => !!(String(a.text || "").trim() || a.ink > 0);
+  const schemePoints = p => (p.scheme.points || []).map(x => ({ text: x.text, hit: true, comment: "" }));
+
+  /* Returns a mark now, or null if it needs the marker */
+  function ruleMark(p, a) {
+    const max = p.marks, base = { max, level: p.scheme.levels ? 0 : null, read: "", confidence: "high", by: "rule" };
+    if (!isAnswered(a)) return { ...base, awarded: 0, points: [], feedback: "Not answered." };
+    if (p.type === "mcq") {
+      const right = p.scheme.correct || [], ch = a.choice || [];
+      const got = ch.filter(k => right.includes(k)).length - Math.max(0, ch.length - p.pick);
+      const awarded = Math.max(0, Math.min(max, p.pick > 1 ? got : (got === 1 && ch.length === 1 ? max : 0)));
+      return { ...base, awarded, points: p.options.map(o => ({ text: `${o.key}: ${plain(o.text)}`, hit: right.includes(o.key) === ch.includes(o.key), comment: right.includes(o.key) ? "correct answer" : "" })).filter((x, i) => right.includes(p.options[i].key) || ch.includes(p.options[i].key)),
+        feedback: awarded === max ? "Correct." : `The answer is ${right.join(" and ")}.` };
+    }
+    const sch = p.scheme;
+    if (sch.numeric && String(a.final || "").trim()) {
+      const n = toNumber(a.final, p), want = targetOf(sch.numeric.value), tol = Number(sch.numeric.tolerance || 0) + 1e-9;
+      const formOk = !sch.numeric.form || (n && n.form === sch.numeric.form && n.simplest !== false);
+      if (n && Math.abs(n.v - want) <= tol && formOk) return { ...base, awarded: max, points: schemePoints(p), feedback: "Correct." };
+      if (!hasWorking(a) && !(n && Math.abs(n.v - want) <= tol)) return { ...base, awarded: 0, points: [], feedback: "That answer isn’t right, and there’s no working to give method marks for. Show your working next time." };
+      return null;
+    }
+    if (sch.exact && a.mode !== "ink") {
+      const t = normExact(a.text);
+      if (sch.exact.some(x => normExact(x) === t)) return { ...base, awarded: max, points: schemePoints(p), feedback: "Correct." };
+    }
+    return null;
+  }
+
+  /* Ask the marker. Returns a mark, or throws { message, code } */
+  async function aiMark(p, a, override) {
+    const sb = window.orchardAuth && window.orchardAuth.client;
+    if (S.mode !== "db" || !sb || !sb.functions) throw { message: "Sign in to use AI marking. You can mark this yourself with the mark scheme.", code: "offline" };
+    const body = { paperId: A.id, partId: p.id, answer: { mode: a.mode || defaultMode(p), text: a.text || "", final: a.final || "", choice: a.choice || [] } };
+    if (override) { body.answer = { ...body.answer, mode: "type", text: override, corrected: true }; }
+    else if ((a.mode || defaultMode(p)) === "ink" && a.ink > 0) {
+      const api = A.inks.get(p.id);
+      const data = api ? api.data() : await loadInk(A.id, p.id);
+      if (data) body.image = VaultInk.renderPNG(data, 1000);
+    }
+    const { data, error } = await sb.functions.invoke("vault-mark", { body });
+    if (error) {
+      let msg = "Couldn’t reach the marker. Check your connection and try again.", code = "";
+      try { const j = await error.context.json(); if (j && j.error) { msg = j.error; code = j.code || ""; } } catch (e) {}
+      if (error.context && error.context.status === 404) { msg = "AI marking isn’t set up yet. You can mark this yourself with the mark scheme."; code = "setup"; }
+      throw { message: msg, code };
+    }
+    return data;
+  }
+
+  const marking = new Set();
+  async function markPart(pid, opts = {}) {
+    if (!A || marking.has(pid)) return;
+    const p = A.d.parts.find(x => x.id === pid), a = answerOf(pid);
+    let m = opts.override ? null : ruleMark(p, a);
+    if (!m) {
+      marking.add(pid); renderResult(pid);
+      try { m = await aiMark(p, a, opts.override); if (opts.override) m.read = opts.override; }
+      catch (e) { marking.delete(pid); a.markError = { message: e.message || "Marking went wrong.", code: e.code || "" }; renderResult(pid); if (!opts.quiet && e.code === "limit") say(e.message); return false; }
+      marking.delete(pid);
+    }
+    if (!A || A.att.answers[pid] !== a) return;
+    delete a.markError;
+    a.mark = { ...m, sig: sigOf(a), at: Date.now() };
+    if (opts.override) a.mark.corrected = true;
+    touched(pid); renderResult(pid);
+    return true;
+  }
+  function selfMark(pid, n) {
+    const p = A.d.parts.find(x => x.id === pid), a = answerOf(pid);
+    delete a.markError;
+    a.mark = { awarded: n, max: p.marks, level: null, points: [], feedback: "Marked by you with the mark scheme.", read: "", by: "self", sig: sigOf(a), at: Date.now() };
+    touched(pid); renderResult(pid);
+  }
+  async function flagMark(pid, reason) {
+    const a = answerOf(pid);
+    if (!a.mark) return;
+    a.mark.flag = { reason: reason.slice(0, 1000), at: Date.now() };
+    touched(pid); renderResult(pid);
+    const sb = window.orchardAuth && window.orchardAuth.client;
+    if (S.mode === "db" && sb) {
+      try { const { error } = await sb.from("vault_flags").insert({ paper_id: A.id, part_id: pid, awarded: a.mark.awarded, max_marks: a.mark.max, reason: reason.slice(0, 1000), answer: { mode: a.mode, text: (a.text || "").slice(0, 4000), final: a.final || "", choice: a.choice || [], read: a.mark.read || "" } }); if (error) throw error; }
+      catch (e) { /* the flag is still saved with the paper */ }
+    }
+    say("Thanks. The mark is flagged for review.");
+  }
+
+  /* ---------- showing a mark ---------- */
+  function schemeHTML(p) {
+    const s = p.scheme, out = [];
+    if (s.correct) out.push(`<p><b>Answer:</b> ${s.correct.map(k => { const o = p.options.find(x => x.key === k); return `${H(k)}${o ? ` (${inline(o.text)})` : ""}`; }).join(", ")}</p>`);
+    if (s.numeric) out.push(`<p><b>Answer:</b> ${H(p.prefix ? p.prefix + " " : "")}${H(String(s.numeric.value).replace(/^(\d+)\/(\d+)$/, (m, a, b) => +a > +b && s.numeric.form === "mixed" ? `${Math.floor(a / b)} ${a % b}/${b}` : m))}${p.units ? " " + H(p.units) : ""}</p>`);
+    if (s.answers && !s.numeric) out.push(`<p><b>Model answer:</b> ${s.answers.map(inline).join("; ")}</p>`);
+    if (s.points && s.points.length) out.push(`<p class="vt-k">Marking points${s.max ? ` · any ${s.max}` : ""}</p><ol class="vt-ms-points">${s.points.map(x => `<li>${inline(x.text)}${(x.marks || 1) > 1 ? ` <i>[${x.marks}]</i>` : ""}</li>`).join("")}</ol>`);
+    if (s.levels) out.push(`<p class="vt-k">Levels</p><ul class="vt-ms-levels">${[...s.levels].sort((x, y) => y.level - x.level).map(l => `<li><b>Level ${l.level}</b> <span>${l.min}–${l.max} marks</span><p>${inline(l.descriptor)}</p></li>`).join("")}</ul>`);
+    if (s.indicative) out.push(`<p class="vt-k">Indicative content</p><ul class="vt-ms-points">${s.indicative.map(x => `<li>${inline(x)}</li>`).join("")}</ul>`);
+    if (s.guidance) out.push(`<p class="vt-ms-guide"><b>Examiner guidance:</b> ${inline(s.guidance)}</p>`);
+    return out.join("");
+  }
+  const BY = { rule: "Marked instantly", ai: "Marked by AI", self: "Marked by you" };
+  function resultHTML(p, a) {
+    const busy = marking.has(p.id), done = A.att.status === "completed";
+    if (busy) return `<div class="vt-res vt-res-busy" role="status"><span class="vt-spin" aria-hidden="true"></span>Marking…</div>`;
+    const m = a.mark, stale = m && !fresh(a);
+    if (a.markError) {
+      const self = ["offline", "setup"].includes(a.markError.code);
+      return `<div class="vt-res vt-res-err"><p>${H(a.markError.message)}</p>${self ? selfMarkHTML(p) : `<button type="button" class="chip sm" data-act="mark">Try again</button>`}
+        <details class="vt-ms"><summary>Mark scheme</summary><div class="vt-ms-body">${schemeHTML(p)}</div></details></div>`;
+    }
+    if (!m) return isAnswered(a) && !done ? `<div class="vt-markbar"><button type="button" class="chip sm vt-mark-btn" data-act="mark">Mark this question</button></div>` : "";
+    const pct = m.max ? m.awarded / m.max : 0, tone = pct >= .999 ? "full" : pct > 0 ? "part" : "none";
+    const hit = (m.points || []).filter(x => x.hit), miss = (m.points || []).filter(x => !x.hit);
+    return `<div class="vt-res" data-tone="${tone}">
+      <div class="vt-res-top">
+        <span class="vt-score"><b>${m.awarded}</b>/${m.max}</span>
+        <span class="vt-res-meta">${m.level ? `<span class="vt-level">Level ${m.level}</span>` : ""}<span>${BY[m.by] || ""}${m.corrected ? " · from your correction" : ""}${m.confidence === "low" ? " · not sure" : ""}</span></span>
+        ${stale ? `<button type="button" class="chip sm" data-act="mark">Answer changed · mark again</button>` : ""}
+      </div>
+      ${m.read && (a.mode || defaultMode(p)) === "ink" ? `<div class="vt-read"><p class="vt-k">What the marker read</p><blockquote>${H(m.read).replace(/\n/g, "<br>")}</blockquote>
+        <div class="vt-read-fix" hidden><textarea class="vt-ta vt-read-ta" rows="3" aria-label="What you wrote">${H(m.read)}</textarea><div class="vt-row-end"><button type="button" class="chip sm" data-act="reread-cancel">Cancel</button><button type="button" class="primary sm" data-act="reread-send">Mark what I wrote</button></div></div>
+        <button type="button" class="vt-link" data-act="reread">That’s not what I wrote</button></div>` : ""}
+      ${m.feedback ? `<p class="vt-feedback">${H(m.feedback)}</p>` : ""}
+      ${hit.length || miss.length ? `<ul class="vt-pts">${hit.map(x => `<li data-hit="true"><i aria-label="Got this">✓</i><span>${H(x.text)}${x.comment ? ` <em>${H(x.comment)}</em>` : ""}</span></li>`).join("")}${miss.map(x => `<li data-hit="false"><i aria-label="Missed this">✗</i><span>${H(x.text)}${x.comment ? ` <em>${H(x.comment)}</em>` : ""}</span></li>`).join("")}</ul>` : ""}
+      <details class="vt-ms"><summary>Mark scheme</summary><div class="vt-ms-body">${schemeHTML(p)}</div></details>
+      <div class="vt-flag">${m.flag ? `<p class="vt-flagged">Flagged: “${H(m.flag.reason)}”</p>` : `<button type="button" class="vt-link" data-act="flag">Think this mark is wrong?</button>
+        <div class="vt-flag-form" hidden><textarea class="vt-ta" rows="2" maxlength="1000" placeholder="What should it have been, and why?" aria-label="Why the mark is wrong"></textarea><div class="vt-row-end"><button type="button" class="chip sm" data-act="flag-cancel">Cancel</button><button type="button" class="primary sm" data-act="flag-send">Flag this mark</button></div></div>`}</div>
+    </div>`;
+  }
+  const selfMarkHTML = p => `<div class="vt-self"><p class="vt-k">Your mark</p><div class="vt-self-btns" role="group" aria-label="Choose your mark">${Array.from({ length: p.marks + 1 }, (_, i) => `<button type="button" class="chip sm" data-act="self" data-n="${i}">${i}</button>`).join("")}</div></div>`;
+  function renderResult(pid) {
+    const host = view.querySelector(`#vt-p-${CSS.escape(pid)} .vt-result`);
+    if (!host || !A) return;
+    host.innerHTML = resultHTML(A.d.parts.find(x => x.id === pid), answerOf(pid));
+  }
+
+  /* ---------- handing in ---------- */
+  function score() {
+    let got = 0, max = 0, marked = 0;
+    A.d.parts.forEach(p => { const a = A.att.answers[p.id]; max += p.marks; if (a && a.mark) { got += a.mark.awarded; marked++; } });
+    return { got, max, marked };
+  }
+  function summaryHTML() {
+    const done = A.att.status === "completed", { got, max, marked } = score();
+    if (!done) return "";
+    const pct = Math.round(got / max * 100), waiting = A.d.parts.length - marked;
+    return `<div class="vt-summary glass" id="vt-summary"><div><p class="vt-k">Handed in</p><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span></p>${waiting ? `<p class="vt-note">${waiting} ${waiting === 1 ? "question still needs" : "questions still need"} a mark. Scroll down to mark ${waiting === 1 ? "it" : "them"}.</p>` : ""}</div><button type="button" class="chip" data-act="retake">Try this paper again</button></div>`;
+  }
+  async function handIn(btn) {
+    const parts = A.d.parts, open = parts.filter(p => !isAnswered(A.att.answers[p.id])).length;
+    if (open && !btn.dataset.sure) { btn.dataset.sure = "1"; btn.textContent = `${open} unanswered · hand in anyway`; return; }
+    await flushAll();
+    const todo = parts.filter(p => !fresh(A.att.answers[p.id]));
+    const end = view.querySelector(".vt-end");
+    let n = 0;
+    const tick = () => { if (end) end.querySelector("p").innerHTML = `<b>Marking…</b> ${n} of ${todo.length} done`; };
+    btn.disabled = true; tick();
+    const queue = todo.slice();
+    const worker = async () => { while (queue.length && A) { const p = queue.shift(); answerOf(p.id); await markPart(p.id, { quiet: true }); n++; tick(); } };
+    await Promise.all([worker(), worker(), worker()]);
+    if (!A) return;
+    const { got, max } = score();
+    Object.assign(A.att, { status: "completed", completedAt: Date.now(), score: got, total: max });
+    await flushAttempt();
+    renderAnswer({ ...parse(), part: null }, true);
+    scrollTo({ top: 0, behavior: "smooth" });
+  }
+  async function retake() {
+    const { got, max } = score();
+    A.att.history = [...(A.att.history || []), { score: got, total: max, startedAt: A.att.startedAt, completedAt: A.att.completedAt }];
+    const keep = { paperId: A.id, history: A.att.history };
+    A.att = { ...keep, status: "in-progress", startedAt: Date.now(), answers: {}, total: A.d.totalMarks };
+    S.attempts[A.id] = A.att;
+    await flushAttempt();
+    renderAnswer({ ...parse(), part: null }, true);
+    scrollTo({ top: 0 });
+  }
+
   /* ---------- events ---------- */
   function openSource(id, btn) {
     const panel = document.getElementById("vt-srcpanel"), x = (A.d.sources || []).find(s => s.id === id);
@@ -601,6 +814,18 @@
     panel.hidden = !open; panel.dataset.src = id;
     if (open) { panel.querySelector(".vt-srcpanel-head b").textContent = x.title; panel.querySelector(".vt-srcpanel-body").innerHTML = fmt(x.body) + figuresHTML(x.figures); }
     view.classList.toggle("vt-src-open", open);
+  }
+  function onAct(b) {
+    const partEl = b.closest(".vt-part"), pid = partEl && partEl.dataset.part, k = b.dataset.act;
+    if (k === "mark") return markPart(pid);
+    if (k === "self") return selfMark(pid, +b.dataset.n);
+    if (k === "handin") return handIn(b);
+    if (k === "retake") return retake();
+    const box = partEl && partEl.querySelector(k.startsWith("flag") ? ".vt-flag-form" : ".vt-read-fix");
+    if (k === "flag" || k === "reread") { box.hidden = false; b.hidden = true; box.querySelector("textarea").focus(); return; }
+    if (k === "flag-cancel" || k === "reread-cancel") { box.hidden = true; box.previousElementSibling && (partEl.querySelector(k === "flag-cancel" ? '[data-act="flag"]' : '[data-act="reread"]').hidden = false); return; }
+    if (k === "flag-send") { const t = box.querySelector("textarea").value.trim(); if (!t) return box.querySelector("textarea").focus(); return flagMark(pid, t); }
+    if (k === "reread-send") { const t = box.querySelector("textarea").value.trim(); if (!t) return; return markPart(pid, { override: t }); }
   }
   function choose(btn) {
     const partEl = btn.closest(".vt-part"), pid = partEl.dataset.part, p = A.d.parts.find(x => x.id === pid), a = answerOf(pid);
@@ -631,6 +856,9 @@
       saveUI(); render(); return;
     }
     if (A) {
+      const act = e.target.closest("[data-act]");
+      if (act) return onAct(act);
+      if (A.att.status === "completed" && e.target.closest(".vt-opt, .vt-mode")) return;
       const opt = e.target.closest(".vt-opt"); if (opt) return choose(opt);
       const md = e.target.closest(".vt-mode [data-mode]"); if (md) return setMode(md);
       const j = e.target.closest("[data-jump]");
@@ -655,7 +883,9 @@
   let qTimer;
   view.addEventListener("input", e => {
     const t = e.target;
+    if (A && t.closest(".vt-result")) return;
     if (A && t.closest(".vt-part")) {
+      if (A.att.status === "completed") return;
       const partEl = t.closest(".vt-part"), pid = partEl.dataset.part;
       if (t.classList.contains("vt-ta")) {
         answerOf(pid).text = t.value; grow(t);
@@ -698,5 +928,5 @@
   initStore();
 
   /* For later stages and for testing */
-  window.orchardVault = { loadIndex, loadPaper, statusOf: id => meta(id) && statusOf(meta(id)), attempts: () => S.attempts, topics, flush: flushAll, open: () => A, mode: () => S.mode };
+  window.orchardVault = { loadIndex, loadPaper, statusOf: id => meta(id) && statusOf(meta(id)), attempts: () => S.attempts, topics, flush: flushAll, open: () => A, mode: () => S.mode, test: { toNumber, ruleMark } };
 })();

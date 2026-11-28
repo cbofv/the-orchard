@@ -117,6 +117,7 @@
          <dt>Go to Study log</dt><dd><kbd>G</kbd><kbd>L</kbd></dd>
          <dt>Go to Grades</dt><dd><kbd>G</kbd><kbd>G</kbd></dd>
          <dt>Settings</dt><dd><kbd>${mod}</kbd><kbd>,</kbd></dd>
+         <dt>Hide or show the sidebar</dt><dd><kbd>${mod}</kbd><kbd>\\</kbd></dd>
          <dt>Show this list</dt><dd><kbd>?</kbd></dd>
          <dt>Close a panel</dt><dd><kbd>Esc</kbd></dd>
        </dl>
@@ -559,4 +560,39 @@ const O_SUBJECT_COLOURS = {
     } catch (e) {}
     return out;
   };
+})();
+
+/* ==========================================================================
+   Sidebar: hide and show it on wide screens (like Claude's).
+   A button at the top of the sidebar hides it; a button in the header brings
+   it back. ⌘\ or Ctrl+\ toggles it. Remembered on this device.
+   ========================================================================== */
+(function sideToggle() {
+  "use strict";
+  const KEY = "orchard-side-hidden", root = document.documentElement;
+  const head = document.querySelector(".drawer-head"), topbar = document.querySelector(".topbar");
+  if (!head || !topbar) return;
+  const ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/><path class="o-st-arrow" d="M15.5 10l-2 2 2 2"/></svg>';
+  const mod = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent) ? "⌘" : "Ctrl+";
+  const mk = (cls, label) => { const b = document.createElement("button"); b.type = "button"; b.className = "icon-btn " + cls; b.setAttribute("aria-label", label); b.title = `${label} (${mod}\\)`; b.innerHTML = ICON; return b; };
+  const hideBtn = mk("o-side-hide", "Hide sidebar"), showBtn = mk("o-side-show", "Show sidebar");
+  head.insertBefore(hideBtn, document.getElementById("close-btn"));
+  topbar.insertBefore(showBtn, topbar.firstChild);
+  const wide = matchMedia("(min-width: 1024px)");
+  function set(hidden, focus) {
+    root.classList.add("side-anim");
+    root.classList.toggle("side-hidden", hidden);
+    try { localStorage.setItem(KEY, hidden ? "1" : "0"); } catch (e) {}
+    hideBtn.setAttribute("aria-expanded", String(!hidden)); showBtn.setAttribute("aria-expanded", String(!hidden));
+    if (focus) (hidden ? showBtn : hideBtn).focus({ preventScroll: true });
+    clearTimeout(set.t); set.t = setTimeout(() => { root.classList.remove("side-anim"); dispatchEvent(new Event("resize")); }, 320);
+  }
+  hideBtn.addEventListener("click", () => set(true, true));
+  showBtn.addEventListener("click", () => set(false, true));
+  document.addEventListener("keydown", e => {
+    if (!(e.metaKey || e.ctrlKey) || e.key !== "\\" || !wide.matches) return;
+    e.preventDefault(); set(!root.classList.contains("side-hidden"), false);
+  });
+  const hidden = root.classList.contains("side-hidden");
+  hideBtn.setAttribute("aria-expanded", String(!hidden)); showBtn.setAttribute("aria-expanded", String(!hidden));
 })();

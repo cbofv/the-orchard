@@ -78,6 +78,40 @@ The **Social** tab lets friends revise together:
 - **Admin tab** (admins only): an overview of accounts and activity, **announcements** shown as a banner at the top of the site for everyone (with an end date), and badges.
 - **Notifications**: turn them on in Social → Profile. You get alerts for new messages, friend requests, badges and friends' study rooms while The Orchard is open in a tab or installed as an app. The tab title and icon also show a count.
 
+## The Vault (past papers, marked question by question)
+The **Vault** tab is a library of past papers that students answer on the site, by typing or by writing
+with Apple Pencil, and get marked question by question.
+- **Adding papers:** each paper is one JSON file. See [`vault/README.md`](vault/README.md) for the format,
+  then run `python3 tools/vault_build.py`, and open **The Vault → Check papers** to confirm the topic tags.
+- **Marking:** multiple choice, final numbers and exact answers are marked instantly in the browser.
+  Everything else is marked by Claude through a Supabase Edge Function, so the API key never reaches the
+  browser. Until that is set up, students can mark those questions themselves with the mark scheme.
+
+### Turning on AI marking (one time)
+1. **Database:** in Supabase, open **SQL Editor → New query**, paste everything from
+   [`supabase-vault-setup.sql`](supabase-vault-setup.sql) and click **Run**. It adds a daily allowance of
+   AI markings per student and a table for marks students flag as wrong (**Table Editor → vault_flags**).
+2. **A Claude API key:** sign in at [platform.claude.com](https://platform.claude.com), add billing, and
+   create an API key under **API keys**. Keep it private.
+3. **The function:** in Supabase, open **Edge Functions → Deploy a new function → Via Editor**. Name it
+   `vault-mark`, replace the example code with everything from
+   [`supabase/functions/vault-mark/index.ts`](supabase/functions/vault-mark/index.ts) and click **Deploy**.
+4. **Let it check sign-ins itself:** open the function's **Details** (or **Settings**) and turn **off**
+   "Enforce JWT verification" (sometimes called "Verify JWT"), then save. The function checks that the
+   student is signed in on every request.
+5. **Secrets:** open **Edge Functions → Secrets** and add:
+   - `ANTHROPIC_API_KEY`: the key from step 2
+   - `VAULT_SITE_URL`: your site's address, e.g. `https://<your-username>.github.io/the-orchard/`
+     (the function reads papers and mark schemes from here, never from the student's browser)
+
+   Optional: `VAULT_DAILY_LIMIT` (AI markings per student per day, default 200), `VAULT_MODEL`
+   (default `claude-opus-5-5`), `VAULT_EFFORT` (default `medium`).
+6. Open a paper in the Vault, answer a written question and tap **Mark this question**.
+
+**Cost:** you pay Anthropic for each AI marking. As a rough guide, expect a few pence per question with
+the default model, so a full paper costs well under a pound. Watch real costs under **Usage** on
+platform.claude.com, and lower `VAULT_DAILY_LIMIT` if you want a tighter cap.
+
 ## Install as an app
 The Orchard can be installed on phones and computers. On desktop Chrome or Edge, click the **download icon** in the top bar (or **Install app** in the footer). On iPhone or iPad, tap **Share → Add to Home Screen**. It opens in its own window, and the main pages still load when you're offline.
 
@@ -133,4 +167,10 @@ On a phone, The Orchard switches to a layout made for it (`phone.js`, `phone.css
 | `prefs.js`, `prefs.css` | Extra themes, fonts and settings |
 | `game.js`, `game.css`, `game-prompts.js` | The Long Shot game and its prompts |
 | `phone.js`, `phone.css` | Phone mode (see above) |
+| `vault.js`, `vault.css` | The Vault: browsing, answering, marking |
+| `vault-ink.js` | The Vault's Apple Pencil writing canvas |
+| `vault/` | The Vault's papers (`vault/papers/…`), figures, catalogue and [format guide](vault/README.md) |
+| `tools/vault_build.py` | Checks every Vault paper and rebuilds `vault/index.json` |
+| `supabase/functions/vault-mark/index.ts` | The AI marking function (deploy it in Supabase, see above) |
+| `supabase-vault-setup.sql` | Run once for AI marking: daily allowance and flagged marks |
 | `tools/stamp.py` | Fingerprints the files so browsers can cache them (see Speed below) |

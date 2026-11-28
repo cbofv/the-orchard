@@ -268,22 +268,26 @@
       },
       redraw() { drawBg(); drawMain(); },
       /* A black-on-white picture of the answer, for marking. Cropped to what was written. */
-      toPNG(maxW = 1000) {
-        const bottom = S.strokes.reduce((m, st) => Math.max(m, bounds(st).y1), 0);
-        const h = Math.max(120, Math.min(S.h, bottom + 40)), k = maxW / W;
-        const c = document.createElement("canvas"); c.width = maxW; c.height = Math.round(h * k);
-        const x = c.getContext("2d");
-        x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
-        paintPaper(x, S.bg, h, "#000", k, .16);
-        x.setTransform(k, 0, 0, k, 0, 0);
-        S.strokes.forEach(st => { x.fillStyle = COLOURS[st.c] && COLOURS[st.c][0] !== "ink" ? COLOURS[st.c][0] : "#111"; x.fill(pathOf(st)); });
-        return c.toDataURL("image/png");
-      },
+      toPNG(maxW) { return renderPNG(api.data(), maxW); },
       destroy() { ro.disconnect(); instances.delete(api); if (lastUsed === api) lastUsed = null; el.remove(); },
     };
     instances.add(api);
     size(); syncBars();
     return api;
+  }
+
+  /* A saved drawing as a black-on-white PNG, without putting it on screen */
+  function renderPNG(data, maxW = 1000) {
+    const strokes = ((data && data.strokes) || []).map(decode).filter(st => st.pts.length);
+    const bottom = strokes.reduce((m, st) => Math.max(m, bounds(st).y1), 0);
+    const h = Math.max(120, Math.min((data && data.h) || MAX_H, bottom + 40)), k = maxW / W;
+    const c = document.createElement("canvas"); c.width = maxW; c.height = Math.round(h * k);
+    const x = c.getContext("2d");
+    x.fillStyle = "#fff"; x.fillRect(0, 0, c.width, c.height);
+    paintPaper(x, (data && data.bg) || "lined", h, "#000", k, .16);
+    x.setTransform(k, 0, 0, k, 0, 0);
+    strokes.forEach(st => { x.fillStyle = COLOURS[st.c] && COLOURS[st.c][0] !== "ink" ? COLOURS[st.c][0] : "#111"; x.fill(pathOf(st)); });
+    return c.toDataURL("image/png");
   }
 
   /* Lined, grid or blank paper, in logical units */
@@ -320,5 +324,5 @@
     e.preventDefault(); e.shiftKey ? lastUsed.redo() : lastUsed.undo();
   });
 
-  window.VaultInk = { mount, tool, W };
+  window.VaultInk = { mount, tool, W, renderPNG };
 })();

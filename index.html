@@ -28,6 +28,7 @@
   var sys = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (p.motion === "reduce" || (p.motion !== "full" && sys)) d.classList.add("reduce-motion");
   if (p.fx3d === "on") d.classList.add("fx3d");
+  try { if (localStorage.getItem("orchard-side-hidden") === "1") d.classList.add("side-hidden"); } catch (e) {}
 })();
 </script>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -43,11 +44,11 @@
 <script src="supabase.js?v=59d39487c3"></script>
 <script src="account.js?v=e84d34b7d7"></script>
 <link rel="stylesheet" href="app.css?v=f82133b5eb">
-<link rel="stylesheet" href="ui.css?v=55c3ce1b15">
+<link rel="stylesheet" href="ui.css?v=acc7d3f801">
 <link rel="stylesheet" href="game.css?v=ccb8bfb87d">
 <link rel="stylesheet" href="prefs.css?v=60b5149983">
 <link rel="stylesheet" href="glow.css?v=1952f28830">
-<link rel="stylesheet" href="vault.css?v=3845e68b35">
+<link rel="stylesheet" href="vault.css?v=737905b20d">
 <link rel="stylesheet" href="phone.css?v=f690546a58">
 <script src="prefs.js?v=ec327fec5f"></script>
 <script src="phone.js?v=c91becab60"></script>
@@ -646,9 +647,9 @@
 </script>
 <script src="social.js?v=2749f797a7"></script>
 <script src="game.js?v=474223eb4e"></script>
-<script src="ui.js?v=a81b3447b1"></script>
-<script src="vault-ink.js?v=e1e5607983"></script>
-<script src="vault.js?v=d9b6ddf0a5"></script>
+<script src="ui.js?v=e66f6d2192"></script>
+<script src="vault-ink.js?v=f08718b298"></script>
+<script src="vault.js?v=cdabda27ce"></script>
 <script src="glow.js?v=bf7fa84548"></script>
 </body>
 </html>
