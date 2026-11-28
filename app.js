@@ -1050,7 +1050,7 @@ renderMore();
    Results are saved privately to your account. Grades run U–9
    (U is stored as 0). Targets live with your settings.
    ============================================================ */
-const GTYPES = { mock: "Mock", test: "Test", exam: "Exam", homework: "Homework", predicted: "Predicted" };
+const GTYPES = { mock: "Mock", test: "Test", exam: "Exam", homework: "Homework", predicted: "Predicted", paper: "Past paper" };
 const gStore = { results: [], mode: "loading" };
 let gradesCol = null;
 const fmtG = g => g === 0 ? "U" : Number.isInteger(g) ? String(g) : g.toFixed(1);
@@ -1644,6 +1644,7 @@ function renderSubjectDetail(def, animate) {
     <div class="field"><span>How confident are you?</span>
       <div class="chips rag">${["red", "amber", "green"].map(k => `<button type="button" class="chip" data-set="${k}" aria-pressed="${r === k}"><i class="dot ${k}"></i>${RAG_LABEL[k]}</button>`).join("")}</div>
     </div>
+    ${typeof window.vaultTopicLink === "function" ? window.vaultTopicLink(s.key) : ""}
     ${def.detailBody ? def.detailBody(s) : detailTools(def, s) + (def.ui.blurtDetail === s.key ? `<div class="bl-detail"><div class="bl-tools"><span class="muted">Blurting: tap a hidden line to reveal it</span><button type="button" class="chip sm" data-blall="1">Reveal all</button><button type="button" class="chip sm" data-blreset="1">Hide again</button></div>${blurtify(plainNotes(s)) || '<p class="empty">Notes for this are on the way.</p>'}</div>` : notesHTML(s))}
     <p class="block-label">Study logged</p>
     ${matches.length ? matches.map(x => `<div class="entry"><i class="dot ${x.rag || "none"}"></i><div class="main"><div class="topic">${esc(x.topic)}</div><div class="meta">${relDay(x.date)}</div></div><span class="dur">${fmtTime(x.minutes)}</span><span></span></div>`).join("") : `<p class="empty" style="margin-top:0">Nothing logged for this yet.</p>`}

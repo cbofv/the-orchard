@@ -60,7 +60,7 @@
   const subjectOrder = name => { const i = (typeof SUBJECTS !== "undefined" ? SUBJECTS : []).findIndex(d => d.subject === name); return i < 0 ? 99 : i; };
 
   /* ---------- papers ---------- */
-  const V = { index: null, indexErr: null, papers: new Map(), loading: new Map() };
+  const V = { index: null, indexErr: null, papers: new Map(), loading: new Map(), virtual: new Map() };
   function loadIndex() {
     if (V.index || V.indexLoading) return V.indexLoading || Promise.resolve(V.index);
     V.indexLoading = fetch("vault/index.json", { cache: "no-cache" })
@@ -69,7 +69,7 @@
       .catch(() => { V.indexErr = "Couldn’t load the list of papers. Check your connection and try again."; V.indexLoading = null; return null; });
     return V.indexLoading;
   }
-  const meta = id => (V.index || []).find(p => p.id === id);
+  const meta = id => (V.index || []).find(p => p.id === id) || V.virtual.get(id);
   function loadPaper(id) {
     if (V.papers.has(id)) return Promise.resolve(V.papers.get(id));
     if (V.loading.has(id)) return V.loading.get(id);
@@ -172,6 +172,7 @@
     if (parts[0] !== "vault") return null;
     if (parts[1] === "paper" && parts[2]) return { page: parts[3] === "answer" ? "answer" : parts[3] === "review" ? "review" : "paper", id: decodeURIComponent(parts[2]), part: parts[4] ? decodeURIComponent(parts[4]) : null };
     if (parts[1] === "check") return { page: "check" };
+    if (parts[1] === "topic" && parts[2]) { const key = decodeURIComponent(parts[2]); return { page: "answer", id: topicId(key), part: null, topic: key }; }
     return { page: "home" };
   }
   function crumbs(r, extra) {
@@ -191,6 +192,12 @@
     lastRoute = key;
     if (!V.index && !V.indexErr) { view.innerHTML = skeleton(); loadIndex().then(render); return; }
     if (V.indexErr) { view.innerHTML = head() + `<p class="empty">${H(V.indexErr)} <button type="button" class="chip sm" data-vt="retry">Try again</button></p>`; crumbs(r); return; }
+    if (r.id && isTopicId(r.id) && !V.papers.has(r.id)) {
+      view.innerHTML = skeleton();
+      buildTopic(r.id).then(d => { if (d) render(); else view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a><p class="empty">There are no questions on that topic in the Vault yet.</p>`; })
+        .catch(() => { view.innerHTML = `<a class="vt-back" href="#vault">${ICON.back}The Vault</a><p class="empty">Couldn’t load those questions. Check your connection and try again.</p>`; });
+      return;
+    }
     if (r.page === "answer") return renderAnswer(r);
     if (A) closeAnswer();
     if (r.page === "review") return renderReview(r);
@@ -267,6 +274,7 @@
         </div>
       </div>
       <div id="vt-list" aria-live="polite">${listHTML(found)}</div>
+      ${practiseHTML()}
       <p class="vt-foot">Every paper is marked against its mark scheme. Orchard practice papers follow the exam board’s format but aren’t official papers. <a href="#vault/check">Check papers</a></p>`;
     crumbs(r);
   }
@@ -517,7 +525,7 @@
   function renderAnswer(r, force) {
     const m = meta(r.id);
     if (!m) return renderPaper(r);
-    crumbs(r, `${m.subject} ${m.paper}`);
+    crumbs(r, m.virtual ? `Practise: ${m.title}` : `${m.subject} ${m.paper}`);
     if (!V.papers.get(r.id)) return waitForPaper(r);
     if (S.mode === "loading") { view.innerHTML = `<div class="vt-skel" aria-hidden="true"><i></i><i></i><i></i></div>`; return; }
     /* Same paper already open: just move to the question */
@@ -532,8 +540,8 @@
     resumeTimerOnOpen();
     view.innerHTML = `<div class="vt-sit${locked ? " vt-locked" : ""}" data-fb="${fbMode()}">
       <div class="vt-tbar glass" role="toolbar" aria-label="Paper tools">
-        <a class="icon-btn vt-tbar-back" href="#vault/paper/${encodeURIComponent(d.id)}" aria-label="Back to the paper’s cover">${ICON.back}</a>
-        <div class="vt-tbar-t"><b>${H(d.subject)} ${H(d.paper)}</b><small><span id="vt-progress"></span> · <span id="vt-save" class="vt-save" data-s="saved"></span></small></div>
+        <a class="icon-btn vt-tbar-back" href="${d.virtual ? "#vault" : `#vault/paper/${encodeURIComponent(d.id)}`}" aria-label="${d.virtual ? "Back to the Vault" : "Back to the paper’s cover"}">${ICON.back}</a>
+        <div class="vt-tbar-t"><b>${d.virtual ? `Practise: ${H(d.title)}` : `${H(d.subject)} ${H(d.paper)}`}</b><small><span id="vt-progress"></span> · <span id="vt-save" class="vt-save" data-s="saved"></span></small></div>
         ${(d.sources || []).map(s => `<button type="button" class="chip sm" data-vt="source" data-src="${H(s.id)}" aria-expanded="false">${H(s.title)}</button>`).join("")}
         ${locked ? `<a class="chip sm" href="#vault/paper/${encodeURIComponent(d.id)}/review">Review</a>` : `<div class="vt-fb" role="group" aria-label="When to show marks"><span class="vt-fb-k">Marks</span><button type="button" data-fb="each" aria-pressed="${fbMode() === "each"}" title="Show the mark and mark scheme as soon as you submit each question"><span class="l">After each</span><span class="s">Each</span></button><button type="button" data-fb="end" aria-pressed="${fbMode() === "end"}" title="Hide all marks until you hand in"><span class="l">At the end</span><span class="s">End</span></button></div>
         <button type="button" class="chip sm vt-timer" data-vt="timer" aria-expanded="false" aria-controls="vt-timerpanel"></button>`}
@@ -667,7 +675,7 @@
   async function aiMark(p, a, override) {
     const sb = window.orchardAuth && window.orchardAuth.client;
     if (S.mode !== "db" || !sb || !sb.functions) throw { message: "Sign in to use AI marking. You can mark this yourself with the mark scheme.", code: "offline" };
-    const body = { paperId: A.id, partId: p.id, answer: { mode: a.mode || defaultMode(p), text: a.text || "", final: a.final || "", choice: a.choice || [] } };
+    const body = { paperId: p.srcPaper || A.id, partId: p.srcPart || p.id, answer: { mode: a.mode || defaultMode(p), text: a.text || "", final: a.final || "", choice: a.choice || [] } };
     if (override) { body.answer = { ...body.answer, mode: "type", text: override, corrected: true }; }
     else if ((a.mode || defaultMode(p)) === "ink" && a.ink > 0) {
       const api = A.inks.get(p.id);
@@ -706,6 +714,12 @@
     const p = A.d.parts.find(x => x.id === pid), a = answerOf(pid);
     delete a.markError;
     a.mark = { awarded: n, max: p.marks, level: null, points: [], feedback: "Marked by you with the mark scheme.", read: "", by: "self", sig: sigOf(a), at: Date.now() };
+    if (A.att.status === "completed") {
+      const res = resultOf(A.d, A.att);
+      Object.assign(A.att, { score: res.got, result: { score: res.got, total: res.total, pct: res.pct, grade: res.grade } });
+      logResult(A.id, A.d, A.att);
+      const sum = document.getElementById("vt-summary"); if (sum) sum.outerHTML = summaryHTML();
+    }
     touched(pid); renderResult(pid);
   }
   async function flagMark(pid, reason) {
@@ -779,8 +793,8 @@
   function summaryHTML() {
     const done = A.att.status === "completed", { got, max, marked } = score();
     if (!done) return "";
-    const pct = Math.round(got / max * 100), waiting = A.d.parts.length - marked;
-    return `<div class="vt-summary glass" id="vt-summary"><div><p class="vt-k">Handed in</p><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span></p>${waiting ? `<p class="vt-note">${waiting} ${waiting === 1 ? "question still needs" : "questions still need"} a mark. Scroll down to mark ${waiting === 1 ? "it" : "them"}.</p>` : ""}</div><div class="vt-sum-acts"><a class="primary" href="#vault/paper/${encodeURIComponent(A.id)}/review">See the review</a><button type="button" class="chip" data-act="retake">Try this paper again</button></div></div>`;
+    const pct = Math.round(got / max * 100), waiting = A.d.parts.length - marked, g = A.d.virtual ? null : gradeFor(A.d, got);
+    return `<div class="vt-summary glass" id="vt-summary"><div><p class="vt-k">Handed in</p><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span>${g !== null ? `<span class="vt-grade">Grade ${gradeText(g)}</span>` : ""}</p>${waiting ? `<p class="vt-note">${waiting} ${waiting === 1 ? "question still needs" : "questions still need"} a mark. Scroll down to mark ${waiting === 1 ? "it" : "them"}.</p>` : ""}</div><div class="vt-sum-acts"><a class="primary" href="#vault/paper/${encodeURIComponent(A.id)}/review">See the review</a><button type="button" class="chip" data-act="retake">Try this paper again</button></div></div>`;
   }
   async function handIn(btn) {
     const parts = A.d.parts, open = parts.filter(p => !isAnswered(A.att.answers[p.id])).length;
@@ -793,6 +807,9 @@
     stopTimer(true);
     const { got, max } = score();
     Object.assign(A.att, { status: "completed", completedAt: Date.now(), score: got, total: max });
+    const res = resultOf(A.d, A.att);
+    A.att.result = { score: res.got, total: res.total, pct: res.pct, grade: res.grade };
+    await logResult(A.id, A.d, A.att);
     await flushAttempt();
     location.hash = `#vault/paper/${encodeURIComponent(A.id)}/review`;
   }
@@ -933,13 +950,17 @@
     const got = rows.reduce((t, x) => t + (x.m ? x.m.awarded : 0), 0), max = d.totalMarks, pct = Math.round(got / max * 100);
     const full = rows.filter(x => x.m && x.m.awarded === x.p.marks).length, some = rows.filter(x => x.m && x.m.awarded > 0 && x.m.awarded < x.p.marks).length, none = rows.length - full - some;
     const shown = reviewLost ? rows.filter(x => !x.m || x.m.awarded < x.p.marks) : rows;
-    const time = att.timer ? att.timer.elapsed : null;
+    const time = att.timer ? att.timer.elapsed : null, grade = d.virtual ? null : gradeFor(d, got);
+    const belowAll = !d.virtual && d.boundaries && grade === null;
     view.innerHTML = `<a class="vt-back" href="${back}">${ICON.back}${H(d.subject)} ${H(d.paper)}</a>
       <header class="vt-rv-head glass">
         <div><p class="eyebrow">Review</p><h1 class="vt-title"><i class="vt-dot" aria-hidden="true" style="--c:${subjectColour(d.subject)}"></i>${H(d.subject)} ${H(d.paper)}</h1><p class="vt-subtitle">${H(d.title)}</p></div>
-        <div class="vt-rv-score"><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span></p>
+        <div class="vt-rv-score"><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span>${grade !== null ? `<span class="vt-grade" title="${H(d.boundaries.note || "From the grade boundaries")}">Grade ${gradeText(grade)}</span>` : belowAll ? `<span class="vt-grade">Below grade ${Math.min(...Object.keys(d.boundaries.grades).map(Number))}</span>` : ""}</p>
           <p class="vt-rv-counts"><span><i data-t="full"></i>${full} full marks</span><span><i data-t="part"></i>${some} part marks</span><span><i data-t="none"></i>${none} no marks</span>${time ? `<span>${clock(time)} taken</span>` : ""}</p></div>
       </header>
+      ${!d.virtual ? `<p class="vt-logged">${att.logged && att.logged.removed ? "Not in your Grades or Past papers." : att.logged ? `${att.logged.gradeId ? `Added to <a href="#grades">Grades</a> (estimated grade ${gradeText(grade)}) and` : "Added to"} <a href="#past-papers">Past papers</a>. <button type="button" class="vt-link" data-vt="unlog">Remove</button>` : ""}${grade !== null && d.boundaries && d.boundaries.note ? ` <span class="vt-note">${H(d.boundaries.note)}</span>` : ""}</p>` : ""}
+      ${topicsHTML(d, att)}
+      <p class="block-label vt-rv-qs">Question by question</p>
       <div class="vt-rv-bar"><div class="chips" role="group" aria-label="Show"><button type="button" class="chip sm" data-vt="rv-filter" data-v="all" aria-pressed="${!reviewLost}">All questions</button><button type="button" class="chip sm" data-vt="rv-filter" data-v="lost" aria-pressed="${reviewLost}">Where I lost marks</button></div>
         <div class="vt-rv-acts"><a class="chip sm" href="${back}/answer">Open the paper</a><button type="button" class="chip sm" data-vt="rv-retake">Try this paper again</button></div></div>
       ${shown.length ? shown.map(({ p, a, m }) => {
@@ -963,6 +984,155 @@
         fig.innerHTML = data ? `<img src="${VaultInk.renderPNG(data, 1000)}" alt="Your handwritten answer">` : `<p class="vt-muted">Your drawing couldn’t be loaded.</p>`;
       } catch (e) { if (fig.isConnected) fig.innerHTML = `<p class="vt-muted">Your drawing couldn’t be loaded.</p>`; }
     });
+  }
+
+  /* ---------- results: grade, topics, Grades and greens ---------- */
+  const GRADE_ORDER = ["9", "8", "7", "6", "5", "4", "3", "2", "1"];
+  /* Estimated grade from the paper's boundaries: a number (0 = U), or null if it can't be told */
+  function gradeFor(d, score) {
+    const g = d.boundaries && d.boundaries.grades;
+    if (!g) return null;
+    for (const k of GRADE_ORDER) if (g[k] !== undefined && score >= g[k]) return +k;
+    const lowest = Math.min(...Object.keys(g).map(Number));
+    return d.tier === "Higher" || lowest <= 1 ? 0 : null; // below the lowest boundary: U on a Higher paper, otherwise unknown
+  }
+  const gradeText = g => g === null ? "" : g === 0 ? "U" : String(g);
+  const RAG_FOR = pct => pct >= .8 ? "green" : pct >= .5 ? "amber" : "red";
+  const RAG_NAME = { red: "Struggled", amber: "Getting there", green: "Confident" };
+  /* Marks got and available for each subtopic (a question tagged with two subtopics counts for both) */
+  function breakdown(d, answers) {
+    const T = topics(), subs = new Map();
+    d.parts.forEach(p => {
+      const m = (answers[p.id] || {}).mark;
+      p.topics.forEach(k => {
+        if (!subs.has(k)) subs.set(k, { key: k, t: T.get(k), got: 0, max: 0, marked: 0, n: 0, ans: 0 });
+        const x = subs.get(k); x.max += p.marks; x.n++; if (isAnswered(answers[p.id])) x.ans++;
+        if (m) { x.got += m.awarded; x.marked += p.marks; }
+      });
+    });
+    const list = [...subs.values()].map(x => ({ ...x, pct: x.marked ? x.got / x.marked : null }));
+    const byTopic = new Map();
+    list.forEach(x => { const k = x.t ? x.t.topic : "Other"; if (!byTopic.has(k)) byTopic.set(k, []); byTopic.get(k).push(x); });
+    return { list, byTopic };
+  }
+  function resultOf(d, att) {
+    const answers = att.answers || {};
+    const got = d.parts.reduce((t, p) => t + (((answers[p.id] || {}).mark || {}).awarded || 0), 0);
+    const total = d.totalMarks, pct = Math.round(got / total * 100);
+    return { got, total, pct, grade: d.virtual ? null : gradeFor(d, got) };
+  }
+  const dayOf = ms => { const x = new Date(ms); return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`; };
+
+  /* Adds (or updates) this sitting in Grades and the Past papers log. Ids are fixed per sitting,
+     so marking a question later updates the same entries rather than adding new ones. */
+  async function logResult(id, d, att) {
+    if (d.virtual || !att || att.status !== "completed" || (att.logged && att.logged.removed)) return;
+    const r = resultOf(d, att), stamp = (att.startedAt || att.completedAt || Date.now()).toString(36);
+    const gradeId = `vault-${id}-${stamp}`, ppId = `vault-${id}-${stamp}`;
+    const date = dayOf(att.completedAt || Date.now());
+    const { list } = breakdown(d, att.answers || {});
+    const weak = list.filter(x => x.pct !== null && x.pct < .5 && x.t).sort((a, b) => a.pct - b.pct).slice(0, 3).map(x => x.t.name);
+    try {
+      if (r.grade !== null && typeof restoreGrade === "function" && typeof gStore !== "undefined") {
+        if (gStore.mode !== "db") gStore.results = gStore.results.filter(x => x.id !== gradeId);
+        await restoreGrade({ id: gradeId, subject: d.subject, grade: r.grade, kind: "paper", title: `${d.paper}, ${d.series}`.slice(0, 80), score: r.pct, date, createdAt: att.completedAt || Date.now(), vault: id });
+      }
+      if (typeof pp !== "undefined" && typeof savePapers === "function") {
+        const entry = { id: ppId, date, subject: d.subject, paper: d.paper.slice(0, 60), series: String(d.series).slice(0, 40), mark: r.got, total: r.total, grade: gradeText(r.grade),
+          mins: att.timer ? Math.round(att.timer.elapsed / 60000) : 0, note: (weak.length ? `Lost marks on: ${weak.join(", ")}` : "").slice(0, 300), createdAt: att.completedAt || Date.now(), vault: id };
+        pp.items = pp.items.filter(x => x.id !== ppId); pp.items.push(entry); savePapers(); if (typeof renderPapers === "function") renderPapers();
+      }
+      att.logged = { gradeId: r.grade !== null ? gradeId : null, ppId };
+    } catch (e) { say("Couldn’t add this result to Grades. It’s still saved with the paper."); }
+  }
+  async function unlogResult(id) {
+    const att = S.attempts[id];
+    if (!att || !att.logged) return;
+    try {
+      if (att.logged.gradeId && typeof removeGrade === "function") await removeGrade(att.logged.gradeId);
+      if (att.logged.ppId && typeof pp !== "undefined") { pp.items = pp.items.filter(x => x.id !== att.logged.ppId); savePapers(); if (typeof renderPapers === "function") renderPapers(); }
+    } catch (e) {}
+    att.logged = { removed: true };
+    try { await saveAttempt(id, att); } catch (e) {}
+  }
+
+  /* The "By topic" section of the review */
+  function topicsHTML(d, att) {
+    const { list, byTopic } = breakdown(d, att.answers || {});
+    const rated = list.filter(x => x.pct !== null && x.t);
+    if (!rated.length) return "";
+    const ratings = typeof syl !== "undefined" ? syl.ratings : {};
+    const best = rated.filter(x => x.pct >= .8).sort((a, b) => b.pct - a.pct || b.max - a.max).slice(0, 3);
+    const worst = rated.filter(x => x.pct < .5).sort((a, b) => a.pct - b.pct || b.max - a.max).slice(0, 3);
+    const todo = rated.filter(x => x.ans && ratings[x.key] !== RAG_FOR(x.pct));
+    const row = x => {
+      const pct = x.pct === null ? null : Math.round(x.pct * 100), sug = x.pct === null || !x.ans ? null : RAG_FOR(x.pct), cur = ratings[x.key] || "", n = topicCount(x.key);
+      return `<li class="vt-tp-row">
+        <span class="vt-tp-name">${x.t ? H(x.t.name) : H(x.key)}<small>${x.got}/${x.marked || x.max} marks</small></span>
+        <span class="vt-bar" aria-hidden="true"><i style="width:${pct || 0}%" data-r="${sug || ""}"></i></span>
+        <b class="vt-tp-pct">${pct === null ? "–" : pct + "%"}</b>
+        <span class="vt-tp-acts">${sug && x.t ? (cur === sug ? `<span class="vt-rated" title="Your rating"><i class="dot ${sug}"></i>${RAG_NAME[sug]}</span>` : `<button type="button" class="chip sm" data-vt="rate" data-key="${H(x.key)}" data-r="${sug}" title="${cur ? `Currently ${RAG_NAME[cur]}` : "Not rated yet"}"><i class="dot ${sug}"></i>Rate “${RAG_NAME[sug]}”</button>`) : ""}${n > (d.virtual ? 9e9 : 0) && x.t ? `<a class="chip sm" href="#vault/topic/${encodeURIComponent(x.key)}" title="Every question on this subtopic">Practise · ${n}</a>` : ""}</span>
+      </li>`;
+    };
+    return `<section class="vt-topics glass" aria-label="Results by topic">
+      <div class="vt-topics-head"><p class="block-label">By topic</p>${todo.length ? `<button type="button" class="chip sm" data-vt="rate-all">Apply ${todo.length} suggested ${todo.length === 1 ? "rating" : "ratings"}</button>` : `<span class="vt-note">Your ratings match these results.</span>`}</div>
+      ${best.length || worst.length ? `<div class="vt-sw">${best.length ? `<div><p class="vt-k">Strongest</p><p>${best.map(x => `${H(x.t.name)} <b>${Math.round(x.pct * 100)}%</b>`).join(" · ")}</p></div>` : ""}${worst.length ? `<div><p class="vt-k">Needs work</p><p>${worst.map(x => `${H(x.t.name)} <b>${Math.round(x.pct * 100)}%</b>`).join(" · ")}</p></div>` : ""}</div>` : ""}
+      ${[...byTopic.entries()].map(([topic, xs]) => {
+        const g = xs.reduce((t, x) => t + x.got, 0), mx = xs.reduce((t, x) => t + (x.marked || 0), 0);
+        return `<div class="vt-tp"><p class="vt-tp-h"><span>${H(topic)}</span><b>${mx ? Math.round(g / mx * 100) + "%" : "–"}</b></p><ul>${xs.sort((a, b) => (a.pct ?? 2) - (b.pct ?? 2)).map(row).join("")}</ul></div>`;
+      }).join("")}
+      <p class="vt-note">Suggested ratings: 80% or more is Confident, 50% or more is Getting there, below that is Struggled. Subtopics you didn’t answer aren’t rated. Ratings update the red, amber and green on your subject pages.</p>
+    </section>`;
+  }
+
+  /* ---------- practise a topic: every question on one subtopic, from every paper ---------- */
+  const topicId = key => "topic--" + key.split("/").join("--");
+  const keyOfTopicId = id => id.slice(7).split("--").join("/");
+  const isTopicId = id => /^topic--/.test(id || "");
+  function topicHits(key) { return (V.index || []).flatMap(m => m.parts.filter(p => p.topics.includes(key)).map(p => ({ m, p }))); }
+  const topicCount = key => topicHits(key).length;
+  async function buildTopic(id) {
+    if (V.papers.has(id)) return V.papers.get(id);
+    const key = keyOfTopicId(id), t = topics().get(key), hits = topicHits(key);
+    if (!t || !hits.length) return null;
+    await Promise.all([...new Set(hits.map(h => h.m.id))].map(loadPaper));
+    const sources = [], questions = [];
+    hits.forEach(({ m, p: lite }) => {
+      const src = V.papers.get(m.id); if (!src) return;
+      const p = src.parts.find(x => x.id === lite.id); if (!p) return;
+      const q = p.q, from = `*${src.subject} ${src.paper}, ${src.series}, question ${p.label}*`;
+      if (q.source && !sources.some(s => s.id === `${m.id}--${q.source}`)) { const s = (src.sources || []).find(x => x.id === q.source); if (s) sources.push({ ...s, id: `${m.id}--${s.id}`, title: `${s.title} (${src.paper}, ${src.series})` }); }
+      const { q: _q, first: _f, ...rest } = p;
+      questions.push({ n: String(questions.length + 1), stem: [from, q.stem].filter(Boolean).join("\n\n"), figures: q.figures, source: q.source ? `${m.id}--${q.source}` : undefined,
+        parts: [{ ...rest, id: `${m.id}--${p.id}`, srcPaper: m.id, srcPart: p.id }] });
+    });
+    const total = questions.reduce((s, q) => s + q.parts[0].marks, 0);
+    const d = { id, virtual: true, subject: t.subject, qualification: "GCSE", board: hits[0].m.board, spec: null, tier: null, year: null, series: "Topic practice",
+      paper: "Topic practice", title: t.name, minutes: Math.max(5, Math.round(total * 1.1)), calculator: null, totalMarks: total, boundaries: null,
+      instructions: [`Every question on ${t.name} from the papers in the Vault.`, "Answer them the same way as a paper. They’re marked the same way too."], sources, questions };
+    prepare(d);
+    V.papers.set(id, d);
+    V.virtual.set(id, { id, virtual: true, subject: d.subject, board: d.board, paper: d.paper, title: d.title, series: d.series, minutes: d.minutes, totalMarks: total, qualification: "GCSE", parts: d.parts.map(p => ({ id: p.id, label: p.label, marks: p.marks, type: p.type, topics: p.topics, text: "" })), file: "" });
+    return d;
+  }
+  /* A link for the subject pages (app.js asks for it when it draws a subtopic) */
+  window.vaultTopicLink = key => {
+    const n = topicCount(key);
+    return n ? `<a class="chip vt-sublink" href="#vault/topic/${encodeURIComponent(key)}"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="14.5" rx="2.5"/><circle cx="12" cy="11.75" r="3.4"/></svg>Past paper questions · ${n}</a>` : "";
+  };
+  /* "Practise by topic" on the Vault page */
+  const tpOpen = new Set();
+  function practiseHTML() {
+    const T = topics(), counts = new Map();
+    (V.index || []).forEach(m => m.parts.forEach(p => p.topics.forEach(k => counts.set(k, (counts.get(k) || 0) + 1))));
+    const bySub = new Map();
+    counts.forEach((n, k) => { const t = T.get(k); if (!t) return; if (!bySub.has(t.subject)) bySub.set(t.subject, new Map()); const g = bySub.get(t.subject); if (!g.has(t.topic)) g.set(t.topic, []); g.get(t.topic).push({ k, t, n }); });
+    if (!bySub.size) return "";
+    return `<section class="vt-practise" aria-label="Practise by topic"><p class="block-label">Practise by topic</p><p class="vt-note">Every question on one subtopic, from every paper.</p>
+      ${[...bySub.entries()].sort((a, b) => subjectOrder(a[0]) - subjectOrder(b[0])).map(([sub, g]) => `<div class="vt-pr-sub glass" style="--c:${subjectColour(sub)}">
+        <button type="button" class="vt-pr-head" data-vt="tp-toggle" data-sub="${H(sub)}" aria-expanded="${tpOpen.has(sub)}"><i class="vt-dot" aria-hidden="true"></i><b>${H(sub)}</b><span>${[...g.values()].reduce((t, xs) => t + xs.length, 0)} subtopics</span>${CHEV}</button>
+        <div class="vt-pr-body"${tpOpen.has(sub) ? "" : " hidden"}>${[...g.entries()].map(([topic, xs]) => `<p class="vt-k">${H(topic)}</p><div class="vt-pr-chips">${xs.map(x => `<a class="chip sm" href="#vault/topic/${encodeURIComponent(x.k)}">${H(x.t.name)}<span>${x.n}</span></a>`).join("")}</div>`).join("")}</div>
+      </div>`).join("")}</section>`;
   }
 
   /* ---------- events ---------- */
@@ -1040,6 +1210,15 @@
       if (act === "timer") { const t = document.getElementById("vt-timerpanel"); t.hidden = !t.hidden; b.setAttribute("aria-expanded", String(!t.hidden)); renderTimer(); const n = document.getElementById("vt-jump"); if (n && !t.hidden) { n.hidden = true; view.querySelector('[data-vt="jump"]')?.setAttribute("aria-expanded", "false"); } }
       if (act === "rv-filter") { reviewLost = b.dataset.v === "lost"; render(); }
       if (act === "rv-retake") retake(parse().id);
+      if (act === "rate" && typeof setRating === "function") { setRating(b.dataset.key, b.dataset.r); say(`Rated “${RAG_NAME[b.dataset.r]}”.`); render(); }
+      if (act === "rate-all" && typeof setRating === "function") {
+        const id = parse().id, d = V.papers.get(id), att = S.attempts[id];
+        const todo = breakdown(d, att.answers || {}).list.filter(x => x.pct !== null && x.ans && x.t && syl.ratings[x.key] !== RAG_FOR(x.pct));
+        todo.forEach(x => setRating(x.key, RAG_FOR(x.pct)));
+        say(`${todo.length} ${todo.length === 1 ? "rating" : "ratings"} updated.`); render();
+      }
+      if (act === "unlog") unlogResult(parse().id).then(() => { say("Removed from Grades and Past papers."); render(); });
+      if (act === "tp-toggle") { const sub = b.dataset.sub, on = !tpOpen.has(sub); on ? tpOpen.add(sub) : tpOpen.delete(sub); b.setAttribute("aria-expanded", String(on)); b.nextElementSibling.hidden = !on; }
       if (act === "source") openSource(b.dataset.src, b);
       if (act === "source-close") openSource(document.getElementById("vt-srcpanel").dataset.src, null);
     }
