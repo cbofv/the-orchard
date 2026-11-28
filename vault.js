@@ -170,7 +170,7 @@
   function parse() {
     const parts = (location.hash || "").slice(1).split("/");
     if (parts[0] !== "vault") return null;
-    if (parts[1] === "paper" && parts[2]) return { page: parts[3] === "answer" ? "answer" : "paper", id: decodeURIComponent(parts[2]), part: parts[4] ? decodeURIComponent(parts[4]) : null };
+    if (parts[1] === "paper" && parts[2]) return { page: parts[3] === "answer" ? "answer" : parts[3] === "review" ? "review" : "paper", id: decodeURIComponent(parts[2]), part: parts[4] ? decodeURIComponent(parts[4]) : null };
     if (parts[1] === "check") return { page: "check" };
     return { page: "home" };
   }
@@ -193,6 +193,7 @@
     if (V.indexErr) { view.innerHTML = head() + `<p class="empty">${H(V.indexErr)} <button type="button" class="chip sm" data-vt="retry">Try again</button></p>`; crumbs(r); return; }
     if (r.page === "answer") return renderAnswer(r);
     if (A) closeAnswer();
+    if (r.page === "review") return renderReview(r);
     if (r.page === "paper") return renderPaper(r, fresh);
     if (r.page === "check") return renderCheck(r);
     renderHome(r, fresh);
@@ -464,6 +465,7 @@
     return Promise.all(jobs);
   }
   function closeAnswer() {
+    if (stopTimer(false)) saveSoon();
     flushAll();
     A.inks.forEach(x => x.destroy());
     A = null;
@@ -527,15 +529,19 @@
     A.att.answers = A.att.answers || {};
     const src = new Map((d.sources || []).map(s => [s.id, s])), shown = new Set();
     const locked = A.att.status === "completed";
-    view.innerHTML = `<div class="vt-sit${locked ? " vt-locked" : ""}">
+    resumeTimerOnOpen();
+    view.innerHTML = `<div class="vt-sit${locked ? " vt-locked" : ""}" data-fb="${fbMode()}">
       <div class="vt-tbar glass" role="toolbar" aria-label="Paper tools">
         <a class="icon-btn vt-tbar-back" href="#vault/paper/${encodeURIComponent(d.id)}" aria-label="Back to the paper’s cover">${ICON.back}</a>
         <div class="vt-tbar-t"><b>${H(d.subject)} ${H(d.paper)}</b><small><span id="vt-progress"></span> · <span id="vt-save" class="vt-save" data-s="saved"></span></small></div>
         ${(d.sources || []).map(s => `<button type="button" class="chip sm" data-vt="source" data-src="${H(s.id)}" aria-expanded="false">${H(s.title)}</button>`).join("")}
+        ${locked ? `<a class="chip sm" href="#vault/paper/${encodeURIComponent(d.id)}/review">Review</a>` : `<div class="vt-fb" role="group" aria-label="When to show marks"><span class="vt-fb-k">Marks</span><button type="button" data-fb="each" aria-pressed="${fbMode() === "each"}" title="Show the mark and mark scheme as soon as you submit each question"><span class="l">After each</span><span class="s">Each</span></button><button type="button" data-fb="end" aria-pressed="${fbMode() === "end"}" title="Hide all marks until you hand in"><span class="l">At the end</span><span class="s">End</span></button></div>
+        <button type="button" class="chip sm vt-timer" data-vt="timer" aria-expanded="false" aria-controls="vt-timerpanel"></button>`}
         <button type="button" class="chip sm" data-vt="jump" aria-expanded="false" aria-controls="vt-jump">Questions</button>
         <span class="vt-tbar-prog" aria-hidden="true"><i id="vt-progress-bar"></i></span>
       </div>
       ${summaryHTML()}
+      <div class="vt-jump vt-timerpanel glass" id="vt-timerpanel" hidden></div>
       <nav class="vt-jump glass" id="vt-jump" aria-label="Go to a question" hidden>${d.parts.map(p => `<button type="button" data-jump="${H(p.id)}">${H(p.label)}</button>`).join("")}</nav>
       <div class="vt-questions">${d.questions.map(q => {
         let s = "";
@@ -551,7 +557,7 @@
     if (locked) view.querySelectorAll(".vt-ans .vt-ta, .vt-ans [data-final]").forEach(x => { x.readOnly = true; });
     view.querySelectorAll(".vt-ta").forEach(grow);
     d.parts.forEach(p => { if (p.type !== "mcq" && (A.att.answers[p.id]?.mode || defaultMode(p)) === "ink") mountInk(p.id); });
-    updateProgress(); setSaveState();
+    updateProgress(); setSaveState(); renderTimer();
     if (r.part) requestAnimationFrame(() => scrollToPart(r.part));
   }
   function grow(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + 2 + "px"; }
@@ -727,6 +733,7 @@
     if (s.guidance) out.push(`<p class="vt-ms-guide"><b>Examiner guidance:</b> ${inline(s.guidance)}</p>`);
     return out.join("");
   }
+  const msHTML = p => `<div class="vt-ms"><div class="vt-ms-head"><p class="vt-k">Mark scheme</p><button type="button" class="vt-link" data-act="ms-toggle" aria-expanded="true">Hide</button></div><div class="vt-ms-body">${schemeHTML(p)}</div></div>`;
   const BY = { rule: "Marked instantly", ai: "Marked by AI", self: "Marked by you" };
   function resultHTML(p, a) {
     const busy = marking.has(p.id), done = A.att.status === "completed";
@@ -735,9 +742,9 @@
     if (a.markError) {
       const self = ["offline", "setup"].includes(a.markError.code);
       return `<div class="vt-res vt-res-err"><p>${H(a.markError.message)}</p>${self ? selfMarkHTML(p) : `<button type="button" class="chip sm" data-act="mark">Try again</button>`}
-        <details class="vt-ms"><summary>Mark scheme</summary><div class="vt-ms-body">${schemeHTML(p)}</div></details></div>`;
+        ${msHTML(p)}</div>`;
     }
-    if (!m) return isAnswered(a) && !done ? `<div class="vt-markbar"><button type="button" class="chip sm vt-mark-btn" data-act="mark">Mark this question</button></div>` : "";
+    if (!m) return isAnswered(a) && !done ? `<div class="vt-markbar"><button type="button" class="primary sm vt-mark-btn" data-act="mark">Submit</button></div>` : "";
     const pct = m.max ? m.awarded / m.max : 0, tone = pct >= .999 ? "full" : pct > 0 ? "part" : "none";
     const hit = (m.points || []).filter(x => x.hit), miss = (m.points || []).filter(x => !x.hit);
     return `<div class="vt-res" data-tone="${tone}">
@@ -751,7 +758,7 @@
         <button type="button" class="vt-link" data-act="reread">That’s not what I wrote</button></div>` : ""}
       ${m.feedback ? `<p class="vt-feedback">${H(m.feedback)}</p>` : ""}
       ${hit.length || miss.length ? `<ul class="vt-pts">${hit.map(x => `<li data-hit="true"><i aria-label="Got this">✓</i><span>${H(x.text)}${x.comment ? ` <em>${H(x.comment)}</em>` : ""}</span></li>`).join("")}${miss.map(x => `<li data-hit="false"><i aria-label="Missed this">✗</i><span>${H(x.text)}${x.comment ? ` <em>${H(x.comment)}</em>` : ""}</span></li>`).join("")}</ul>` : ""}
-      <details class="vt-ms"><summary>Mark scheme</summary><div class="vt-ms-body">${schemeHTML(p)}</div></details>
+      ${msHTML(p)}
       <div class="vt-flag">${m.flag ? `<p class="vt-flagged">Flagged: “${H(m.flag.reason)}”</p>` : `<button type="button" class="vt-link" data-act="flag">Think this mark is wrong?</button>
         <div class="vt-flag-form" hidden><textarea class="vt-ta" rows="2" maxlength="1000" placeholder="What should it have been, and why?" aria-label="Why the mark is wrong"></textarea><div class="vt-row-end"><button type="button" class="chip sm" data-act="flag-cancel">Cancel</button><button type="button" class="primary sm" data-act="flag-send">Flag this mark</button></div></div>`}</div>
     </div>`;
@@ -773,36 +780,189 @@
     const done = A.att.status === "completed", { got, max, marked } = score();
     if (!done) return "";
     const pct = Math.round(got / max * 100), waiting = A.d.parts.length - marked;
-    return `<div class="vt-summary glass" id="vt-summary"><div><p class="vt-k">Handed in</p><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span></p>${waiting ? `<p class="vt-note">${waiting} ${waiting === 1 ? "question still needs" : "questions still need"} a mark. Scroll down to mark ${waiting === 1 ? "it" : "them"}.</p>` : ""}</div><button type="button" class="chip" data-act="retake">Try this paper again</button></div>`;
+    return `<div class="vt-summary glass" id="vt-summary"><div><p class="vt-k">Handed in</p><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span></p>${waiting ? `<p class="vt-note">${waiting} ${waiting === 1 ? "question still needs" : "questions still need"} a mark. Scroll down to mark ${waiting === 1 ? "it" : "them"}.</p>` : ""}</div><div class="vt-sum-acts"><a class="primary" href="#vault/paper/${encodeURIComponent(A.id)}/review">See the review</a><button type="button" class="chip" data-act="retake">Try this paper again</button></div></div>`;
   }
   async function handIn(btn) {
     const parts = A.d.parts, open = parts.filter(p => !isAnswered(A.att.answers[p.id])).length;
     if (open && !btn.dataset.sure) { btn.dataset.sure = "1"; btn.textContent = `${open} unanswered · hand in anyway`; return; }
     await flushAll();
-    const todo = parts.filter(p => !fresh(A.att.answers[p.id]));
     const end = view.querySelector(".vt-end");
-    let n = 0;
-    const tick = () => { if (end) end.querySelector("p").innerHTML = `<b>Marking…</b> ${n} of ${todo.length} done`; };
-    btn.disabled = true; tick();
-    const queue = todo.slice();
-    const worker = async () => { while (queue.length && A) { const p = queue.shift(); answerOf(p.id); await markPart(p.id, { quiet: true }); n++; tick(); } };
-    await Promise.all([worker(), worker(), worker()]);
+    btn.disabled = true;
+    await markMany(parts.filter(p => !fresh(A.att.answers[p.id])), (n, of) => { if (end) end.querySelector("p").innerHTML = `<b>Marking…</b> ${n} of ${of} done`; });
     if (!A) return;
+    stopTimer(true);
     const { got, max } = score();
     Object.assign(A.att, { status: "completed", completedAt: Date.now(), score: got, total: max });
     await flushAttempt();
-    renderAnswer({ ...parse(), part: null }, true);
-    scrollTo({ top: 0, behavior: "smooth" });
+    location.hash = `#vault/paper/${encodeURIComponent(A.id)}/review`;
   }
-  async function retake() {
-    const { got, max } = score();
-    A.att.history = [...(A.att.history || []), { score: got, total: max, startedAt: A.att.startedAt, completedAt: A.att.completedAt }];
-    const keep = { paperId: A.id, history: A.att.history };
-    A.att = { ...keep, status: "in-progress", startedAt: Date.now(), answers: {}, total: A.d.totalMarks };
-    S.attempts[A.id] = A.att;
-    await flushAttempt();
-    renderAnswer({ ...parse(), part: null }, true);
+  /* Marks several questions, three at a time */
+  async function markMany(parts, onTick) {
+    let n = 0;
+    const queue = parts.slice();
+    if (onTick) onTick(0, parts.length);
+    const worker = async () => { while (queue.length && A) { const p = queue.shift(); answerOf(p.id); await markPart(p.id, { quiet: true }); n++; if (onTick) onTick(n, parts.length); } };
+    await Promise.all([worker(), worker(), worker()]);
+  }
+  async function retake(id) {
+    const old = (A && A.id === id) ? A.att : S.attempts[id];
+    if (!old) return;
+    const history = [...(old.history || []), { score: old.score, total: old.total, startedAt: old.startedAt, completedAt: old.completedAt, timeMs: old.timer ? old.timer.elapsed : undefined }];
+    const fresh = { paperId: id, history, status: "in-progress", startedAt: Date.now(), answers: {}, total: old.total };
+    if (A && A.id === id) A.att = fresh;
+    try { await saveAttempt(id, fresh); } catch (e) { say("Couldn’t save to your account. Check your connection."); }
+    const want = `#vault/paper/${encodeURIComponent(id)}/answer`;
+    if (location.hash === want) renderAnswer(parse(), true); else location.hash = want;
     scrollTo({ top: 0 });
+  }
+
+  /* ---------- when marks are shown ----------
+     "each": a Submit button on every question shows the mark straight away.
+     "end": nothing is shown until the paper is handed in. Remembered per student. */
+  const fbMode = () => S.prefs.feedback === "end" ? "end" : "each";
+  async function setFeedback(mode) {
+    if (!A || mode === fbMode()) return;
+    savePrefs({ feedback: mode });
+    const sit = view.querySelector(".vt-sit");
+    sit.dataset.fb = mode;
+    view.querySelectorAll(".vt-fb [data-fb]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.fb === mode)));
+    if (mode === "end") { say("Marks are hidden until you hand in."); return; }
+    // Switching to "after each": mark and show everything already answered
+    const todo = A.d.parts.filter(p => isAnswered(A.att.answers[p.id]) && !fresh(A.att.answers[p.id]));
+    if (!todo.length) { say("Marks will show as you submit each question."); return; }
+    say(`Marking the ${todo.length} ${todo.length === 1 ? "question" : "questions"} you’ve answered…`);
+    await markMany(todo);
+    if (A) say("Marks are showing for the questions you’ve answered.");
+  }
+
+  /* ---------- exam mode ----------
+     A countdown set to the real exam length. Saved with the paper:
+     { limit, elapsed, since (while running), hidden, warned5, warnedEnd }.
+     It pauses when the paper is closed, so it never runs on for days. */
+  let timerTick = 0;
+  const T = () => A && A.att.timer;
+  const elapsedNow = t => t.elapsed + (t.since ? Date.now() - t.since : 0);
+  const clock = ms => { const s = Math.max(0, Math.round(Math.abs(ms) / 1000)); const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return (h ? h + ":" + String(m).padStart(2, "0") : m) + ":" + String(x).padStart(2, "0"); };
+  function resumeTimerOnOpen() {
+    const t = T();
+    if (t && t.since) {
+      // The page was closed while it ran: count up to the last moment it was seen, then pause
+      t.elapsed += Math.max(0, Math.min(Date.now(), t.seen || t.since) - t.since);
+      t.since = null; t.paused = true;
+    }
+  }
+  function timerAction(k) {
+    if (!A) return;
+    let t = T();
+    if (k === "start") { t = A.att.timer = { limit: A.d.minutes * 60000, elapsed: 0, since: Date.now(), seen: Date.now(), hidden: false }; say(`Timer started: ${mins(A.d.minutes)}.`); }
+    if (!t) return;
+    if (k === "pause" && t.since) { t.elapsed = elapsedNow(t); t.since = null; t.paused = true; }
+    if (k === "resume" && !t.since) { t.since = Date.now(); t.seen = Date.now(); t.paused = false; }
+    if (k === "hide") t.hidden = !t.hidden;
+    if (k === "stop") { delete A.att.timer; document.getElementById("vt-timerpanel").hidden = true; view.querySelector('[data-vt="timer"]')?.setAttribute("aria-expanded", "false"); }
+    saveSoon(); renderTimer();
+  }
+  function stopTimer(final) {
+    clearInterval(timerTick); timerTick = 0;
+    const t = T();
+    if (t && t.since) { t.elapsed = elapsedNow(t); t.since = null; if (!final) t.paused = true; return true; }
+    return false;
+  }
+  function saveSoon() { clearTimeout(SAVE.attempt); SAVE.attempt = setTimeout(flushAttempt, 400); setSaveState(); }
+  function renderTimer() {
+    const chip = view.querySelector('[data-vt="timer"]'), panel = document.getElementById("vt-timerpanel");
+    const t = T();
+    clearInterval(timerTick); timerTick = 0;
+    if (!chip) return;
+    if (!t) {
+      chip.innerHTML = `${ICON.clock}<span>Exam mode</span>`; chip.dataset.state = "off";
+      if (panel) panel.innerHTML = `<p>Time yourself like the real exam: <b>${H(mins(A.d.minutes))}</b>. You can pause or hide the timer at any time.</p><button type="button" class="primary sm" data-timer="start">Start the timer</button>`;
+      return;
+    }
+    const draw = () => {
+      const left = t.limit - elapsedNow(t), over = left < 0;
+      chip.dataset.state = over ? "over" : t.since ? "on" : "paused";
+      chip.innerHTML = `${ICON.clock}<span>${t.hidden ? (t.since ? "Timer on" : "Paused") : (over ? "+" : "") + clock(left)}${!t.hidden && !t.since ? " · paused" : ""}</span>`;
+      chip.setAttribute("aria-label", t.hidden ? "Exam timer (time hidden)" : over ? `Over time by ${clock(left)}` : `${clock(left)} left`);
+      if (t.since) {
+        if (!t.warned5 && left <= 5 * 60000 && left > 0 && t.limit > 10 * 60000) { t.warned5 = true; say("5 minutes left."); saveSoon(); }
+        if (!t.warnedEnd && over) { t.warnedEnd = true; say("Time’s up. Finish the sentence you’re on, then hand in."); saveSoon(); }
+        if (Date.now() - (t.seen || 0) > 30000) { t.seen = Date.now(); saveSoon(); }
+      }
+    };
+    draw();
+    if (t.since) timerTick = setInterval(() => { if (!A || !chip.isConnected) return clearInterval(timerTick); draw(); }, 1000);
+    if (panel) panel.innerHTML = `<p>${t.since ? "The timer is running." : "The timer is paused."} ${t.hidden ? "The time is hidden." : ""}</p>
+      <div class="vt-timer-acts">${t.since ? `<button type="button" class="chip sm" data-timer="pause">Pause</button>` : `<button type="button" class="primary sm" data-timer="resume">Resume</button>`}
+      <button type="button" class="chip sm" data-timer="hide">${t.hidden ? "Show the time" : "Hide the time"}</button>
+      <button type="button" class="chip sm" data-timer="stop">Stop exam mode</button></div>`;
+  }
+
+  /* ---------- the review screen ----------
+     After hand in: each answer beside its mark scheme, with the mark and feedback. */
+  let reviewLost = false;
+  function answerReviewHTML(p, a) {
+    if (!isAnswered(a)) return `<p class="vt-muted">Not answered.</p>`;
+    if (p.type === "mcq") {
+      const right = p.scheme.correct || [];
+      return `<ul class="vt-rv-opts">${p.options.filter(o => (a.choice || []).includes(o.key)).map(o => `<li data-ok="${right.includes(o.key)}"><span class="vt-opt-k">${H(o.key)}</span>${inline(o.text)}<i>${right.includes(o.key) ? "✓" : "✗"}</i></li>`).join("")}</ul>`;
+    }
+    const mode = a.mode || defaultMode(p), out = [];
+    if (mode === "ink" && a.ink > 0) out.push(`<figure class="vt-fig line-art vt-rv-ink" data-ink-part="${H(p.id)}"><div class="vt-skel" aria-hidden="true"><i></i></div></figure>${a.mark && a.mark.read ? `<p class="vt-k">What the marker read</p><blockquote class="vt-rv-read">${H(a.mark.read).replace(/\n/g, "<br>")}</blockquote>` : ""}`);
+    else if (String(a.text || "").trim()) out.push(`<div class="vt-rv-text">${H(a.text).replace(/\n/g, "<br>")}</div>`);
+    if (String(a.final || "").trim()) out.push(`<p class="vt-rv-final"><span>Answer</span> ${H(p.prefix ? p.prefix + " " : "")}<b>${H(a.final)}</b>${p.units ? " " + H(p.units) : ""}</p>`);
+    return out.join("") || `<p class="vt-muted">Not answered.</p>`;
+  }
+  function markReviewHTML(m) {
+    if (!m) return `<p class="vt-muted">Not marked yet. Open the paper to mark this question.</p>`;
+    const hit = (m.points || []).filter(x => x.hit), miss = (m.points || []).filter(x => !x.hit);
+    return `${m.feedback ? `<p class="vt-feedback">${H(m.feedback)}</p>` : ""}
+      ${hit.length || miss.length ? `<ul class="vt-pts">${hit.map(x => `<li data-hit="true"><i aria-label="Got this">✓</i><span>${H(x.text)}${x.comment ? ` <em>${H(x.comment)}</em>` : ""}</span></li>`).join("")}${miss.map(x => `<li data-hit="false"><i aria-label="Missed this">✗</i><span>${H(x.text)}${x.comment ? ` <em>${H(x.comment)}</em>` : ""}</span></li>`).join("")}</ul>` : ""}
+      ${m.flag ? `<p class="vt-flagged">Flagged: “${H(m.flag.reason)}”</p>` : ""}`;
+  }
+  function renderReview(r) {
+    const m = meta(r.id);
+    if (!m) return renderPaper(r);
+    crumbs(r, `${m.subject} ${m.paper} review`);
+    if (!V.papers.get(r.id)) return waitForPaper(r);
+    if (S.mode === "loading") { view.innerHTML = `<div class="vt-skel" aria-hidden="true"><i></i><i></i></div>`; return; }
+    const d = V.papers.get(r.id), att = S.attempts[r.id], back = `#vault/paper/${encodeURIComponent(d.id)}`;
+    if (!att || att.status !== "completed") { view.innerHTML = `<a class="vt-back" href="${back}">${ICON.back}${H(d.subject)} ${H(d.paper)}</a><p class="empty">Hand the paper in to see the review. <a class="chip sm" href="${back}/answer">Open the paper</a></p>`; return; }
+    const ans = att.answers || {};
+    const rows = d.parts.map(p => ({ p, a: ans[p.id] || {}, m: (ans[p.id] || {}).mark }));
+    const got = rows.reduce((t, x) => t + (x.m ? x.m.awarded : 0), 0), max = d.totalMarks, pct = Math.round(got / max * 100);
+    const full = rows.filter(x => x.m && x.m.awarded === x.p.marks).length, some = rows.filter(x => x.m && x.m.awarded > 0 && x.m.awarded < x.p.marks).length, none = rows.length - full - some;
+    const shown = reviewLost ? rows.filter(x => !x.m || x.m.awarded < x.p.marks) : rows;
+    const time = att.timer ? att.timer.elapsed : null;
+    view.innerHTML = `<a class="vt-back" href="${back}">${ICON.back}${H(d.subject)} ${H(d.paper)}</a>
+      <header class="vt-rv-head glass">
+        <div><p class="eyebrow">Review</p><h1 class="vt-title"><i class="vt-dot" aria-hidden="true" style="--c:${subjectColour(d.subject)}"></i>${H(d.subject)} ${H(d.paper)}</h1><p class="vt-subtitle">${H(d.title)}</p></div>
+        <div class="vt-rv-score"><p class="vt-sum-score"><b>${got}</b>/${max} <span>${pct}%</span></p>
+          <p class="vt-rv-counts"><span><i data-t="full"></i>${full} full marks</span><span><i data-t="part"></i>${some} part marks</span><span><i data-t="none"></i>${none} no marks</span>${time ? `<span>${clock(time)} taken</span>` : ""}</p></div>
+      </header>
+      <div class="vt-rv-bar"><div class="chips" role="group" aria-label="Show"><button type="button" class="chip sm" data-vt="rv-filter" data-v="all" aria-pressed="${!reviewLost}">All questions</button><button type="button" class="chip sm" data-vt="rv-filter" data-v="lost" aria-pressed="${reviewLost}">Where I lost marks</button></div>
+        <div class="vt-rv-acts"><a class="chip sm" href="${back}/answer">Open the paper</a><button type="button" class="chip sm" data-vt="rv-retake">Try this paper again</button></div></div>
+      ${shown.length ? shown.map(({ p, a, m }) => {
+        const tone = !m ? "" : m.awarded === p.marks ? "full" : m.awarded > 0 ? "part" : "none";
+        const lead = p.first && p.q.stem && !/^(This question|Read )/.test(p.q.stem) ? `<div class="vt-rv-stem">${fmt(p.q.stem)}${figuresHTML(p.q.figures)}</div>` : "";
+        return `<section class="vt-rv glass" data-tone="${tone}" aria-label="Question ${H(p.label)}">
+          <div class="vt-rv-top"><span class="vt-label">${H(p.label)}</span><div class="vt-text">${lead}${fmt(p.text)}${figuresHTML(p.figures)}</div>
+            <span class="vt-rv-mark"><span>${m ? `<b>${m.awarded}</b>/${p.marks}` : `–/${p.marks}`}</span>${m && m.level ? `<small>Level ${m.level}</small>` : ""}</span></div>
+          <div class="vt-rv-cols">
+            <div class="vt-rv-col"><p class="vt-k">Your answer</p>${answerReviewHTML(p, a)}</div>
+            <div class="vt-rv-col vt-rv-ms"><p class="vt-k">Mark scheme</p><div class="vt-ms-body">${schemeHTML(p)}</div></div>
+          </div>
+          <div class="vt-rv-fb">${markReviewHTML(m)}</div>
+        </section>`;
+      }).join("") : `<p class="empty">Full marks on every question. Nothing to review.</p>`}`;
+    // Handwritten answers: draw them from the saved strokes
+    view.querySelectorAll("[data-ink-part]").forEach(async fig => {
+      try {
+        const data = await loadInk(d.id, fig.dataset.inkPart);
+        if (!fig.isConnected) return;
+        fig.innerHTML = data ? `<img src="${VaultInk.renderPNG(data, 1000)}" alt="Your handwritten answer">` : `<p class="vt-muted">Your drawing couldn’t be loaded.</p>`;
+      } catch (e) { if (fig.isConnected) fig.innerHTML = `<p class="vt-muted">Your drawing couldn’t be loaded.</p>`; }
+    });
   }
 
   /* ---------- events ---------- */
@@ -817,10 +977,11 @@
   }
   function onAct(b) {
     const partEl = b.closest(".vt-part"), pid = partEl && partEl.dataset.part, k = b.dataset.act;
+    if (k === "ms-toggle") { const body = b.closest(".vt-ms").querySelector(".vt-ms-body"), open = body.hidden; body.hidden = !open; b.textContent = open ? "Hide" : "Show"; b.setAttribute("aria-expanded", String(open)); return; }
     if (k === "mark") return markPart(pid);
     if (k === "self") return selfMark(pid, +b.dataset.n);
     if (k === "handin") return handIn(b);
-    if (k === "retake") return retake();
+    if (k === "retake") return retake(A.id);
     const box = partEl && partEl.querySelector(k.startsWith("flag") ? ".vt-flag-form" : ".vt-read-fix");
     if (k === "flag" || k === "reread") { box.hidden = false; b.hidden = true; box.querySelector("textarea").focus(); return; }
     if (k === "flag-cancel" || k === "reread-cancel") { box.hidden = true; box.previousElementSibling && (partEl.querySelector(k === "flag-cancel" ? '[data-act="flag"]' : '[data-act="reread"]').hidden = false); return; }
@@ -861,6 +1022,10 @@
       if (A.att.status === "completed" && e.target.closest(".vt-opt, .vt-mode")) return;
       const opt = e.target.closest(".vt-opt"); if (opt) return choose(opt);
       const md = e.target.closest(".vt-mode [data-mode]"); if (md) return setMode(md);
+      const fb = e.target.closest(".vt-fb [data-fb]");
+      if (fb) return setFeedback(fb.dataset.fb);
+      const tp = e.target.closest("[data-timer]");
+      if (tp) return timerAction(tp.dataset.timer);
       const j = e.target.closest("[data-jump]");
       if (j) { document.getElementById("vt-jump").hidden = true; view.querySelector('[data-vt="jump"]').setAttribute("aria-expanded", "false"); scrollToPart(j.dataset.jump, true); return; }
     }
@@ -871,7 +1036,10 @@
       if (act === "reset") { Object.assign(ui, { subject: "all", status: "all", year: "all", tier: "all", board: "all", q: "" }); saveUI(); render(); }
       if (act === "retry") { V.indexErr = null; render(); }
       if (act === "start") startPaper(parse().id);
-      if (act === "jump") { const n = document.getElementById("vt-jump"); n.hidden = !n.hidden; b.setAttribute("aria-expanded", String(!n.hidden)); }
+      if (act === "jump") { const n = document.getElementById("vt-jump"); n.hidden = !n.hidden; b.setAttribute("aria-expanded", String(!n.hidden)); const t = document.getElementById("vt-timerpanel"); if (t && !n.hidden) { t.hidden = true; view.querySelector('[data-vt="timer"]')?.setAttribute("aria-expanded", "false"); } }
+      if (act === "timer") { const t = document.getElementById("vt-timerpanel"); t.hidden = !t.hidden; b.setAttribute("aria-expanded", String(!t.hidden)); renderTimer(); const n = document.getElementById("vt-jump"); if (n && !t.hidden) { n.hidden = true; view.querySelector('[data-vt="jump"]')?.setAttribute("aria-expanded", "false"); } }
+      if (act === "rv-filter") { reviewLost = b.dataset.v === "lost"; render(); }
+      if (act === "rv-retake") retake(parse().id);
       if (act === "source") openSource(b.dataset.src, b);
       if (act === "source-close") openSource(document.getElementById("vt-srcpanel").dataset.src, null);
     }
@@ -911,7 +1079,7 @@
   });
   /* Save straight away when the page is hidden: switching apps, locking the iPad or closing the tab */
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") flushAll(); });
-  addEventListener("pagehide", () => flushAll());
+  addEventListener("pagehide", () => { if (A && T() && T().since) { T().seen = Date.now(); saveSoon(); } flushAll(); });
   /* Re-fit answer boxes when the iPad rotates */
   addEventListener("resize", () => { if (A) view.querySelectorAll(".vt-ta").forEach(grow); });
 
@@ -919,7 +1087,7 @@
     const m = meta(id);
     if (!m) return;
     if (!S.attempts[id]) { try { await saveAttempt(id, { paperId: id, status: "in-progress", startedAt: Date.now(), answers: {}, total: m.totalMarks }); } catch (e) { say("Couldn’t save to your account. Your answers will save once you’re back online."); } }
-    location.hash = `#vault/paper/${encodeURIComponent(id)}/answer`;
+    location.hash = `#vault/paper/${encodeURIComponent(id)}/${S.attempts[id] && S.attempts[id].status === "completed" ? "review" : "answer"}`;
   }
 
   addEventListener("hashchange", () => { if (parse()) render(); else if (A) closeAnswer(); });
